@@ -426,7 +426,6 @@ if [ "${fticks}" != "n" ]; then
 
 	cd /opt
 	git clone git://github.com/leifj/ndn-shib-fticks.git >> ${statusFile} 2>&1
-	#yum -y localinstall ${downloadPath}/jdk-8u5-linux-x64.rpm >> ${statusFile} 2>&1
 	cd ndn-shib-fticks
 	JAVA_HOME=/usr/java/default mvn >> ${statusFile} 2>&1
 	cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
@@ -899,12 +898,14 @@ EOM
 
 installJetty() {
 
-#tmpUrl=$(curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -E "jetty-distribution-9.*gz&r=1")
-#jetty9URL=${tmpUrl:12:109}
-jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.4.v20141103.tar.gz"
+#Grab latest version
+#jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+#jetty9Path=`basename ${jetty9File}  .tar.gz`
+#jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
 
+#Grab 9.2.4 version
+jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.4.v20141103.tar.gz"
 jetty9File="${jetty9URL##*/}"
-jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
 jetty9Path=`basename ${jetty9File}  .tar.gz`
 
         if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
@@ -954,7 +955,7 @@ patchJettyConfigs ()
                 iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
                 iptables-save > /etc/sysconfig/iptables
         fi
-        service iptables reload
+        service iptables restart
 	jettySSLport="7443"
 
         if [ ! -s "${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar" ]; then
@@ -1237,7 +1238,7 @@ patchTomcatConfigs ()
 			iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
 			iptables-save > /etc/sysconfig/iptables
 		fi
-		service iptables reload
+		service iptables restart
 		tomcatSSLport="7443"
 	fi
 
