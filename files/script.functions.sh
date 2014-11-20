@@ -899,14 +899,14 @@ EOM
 installJetty() {
 
 #Install specific version
-jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.4.v20141103.tar.gz"
-jetty9File="${jetty9URL##*/}"
-jetty9Path=`basename ${jetty9File}  .tar.gz`
+#jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.4.v20141103.tar.gz"
+#jetty9File="${jetty9URL##*/}"
+#jetty9Path=`basename ${jetty9File}  .tar.gz`
 
 #Download latest stable
-#jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
-#jetty9Path=`basename ${jetty9File}  .tar.gz`
-#jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+jetty9Path=`basename ${jetty9File}  .tar.gz`
+jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
 
         if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
         then
@@ -925,6 +925,7 @@ jetty9Path=`basename ${jetty9File}  .tar.gz`
 		sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
 		sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/base/g' /opt/jetty/bin/jetty.sh
 		sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/base\/tmp/g' /opt/jetty/bin/jetty.sh
+		cat ${Spath}/files/jetty.sh > /opt/jetty/bin/jetty.sh
 		useradd jetty
 		chown jetty:jetty /opt/jetty/ -R
 		ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
@@ -1590,8 +1591,6 @@ ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customiz
 
 	containerDist="Jetty9"
 
-        patchFirewall
-
 	# check for installed IDP
 	setVarUpgradeType
 
@@ -1616,6 +1615,8 @@ ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customiz
 	setJavaCACerts
 
 	generatePasswordsForSubsystems
+
+	patchFirewall
 
 	installJetty
 	# moved from above tomcat, to here just after.
