@@ -1,11 +1,6 @@
 Introduction to the Federated Identity Appliance Deployer Tool
 ------------------------------------------------------------------------------------
-[Cosmin]
-Download jdk-8u25-linux-x64.gz from http://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html
-Put the jdk-8u25-linux-x64.gz in the download folder 
-
-
-
+cdinro
 This tool is a set of scripts that automates the deployment and configuration
 of software used to participate with your SAML2 or eduroam identity federation 
 services.

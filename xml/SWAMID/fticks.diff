@@ -3,6 +3,7 @@
 > 		<syslogHost>syslog.swamid.se</syslogHost>
 > 		<federationIdentifier>swamid</federationIdentifier>
 > 		<version>1.0</version>
+> 		<keyFile>/opt/shibboleth-idp/conf/fticks-key.txt</keyFile>
 > 	</appender>
 > 
 > 
