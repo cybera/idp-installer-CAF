@@ -153,8 +153,12 @@ setJavaHome () {
 
         elif [ "$containerDist" == "Jetty9" ]; then
 		#Install from src
+		javaSrc="jdk-8u25-linux-x64.tar.gz"
+		if [ ! -s "${downloadPath}/${javaSrc}" ]; then
+                	${fetchCmd} ${downloadPath}/${javaSrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie"  https://download.oracle.com/otn-pub/java/jdk/8u25-b17/${javaSrc} >> ${statusFile} 2>&1
+        	fi
 		mkdir /usr/java
-		tar xzf ${downloadPath}/jdk-8u25-linux-x64.gz -C /usr/java/
+		tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
 		ln -s /usr/java/jdk1.8.0_25/ /usr/java/latest
 		ln -s /usr/java/latest /usr/java/default
                 export JAVA_HOME="/usr/java/default/jre"
