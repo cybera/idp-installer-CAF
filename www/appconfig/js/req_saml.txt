@@ -1,3 +1,0 @@
-appserv
-type
-idpurl
