@@ -898,15 +898,15 @@ EOM
 
 installJetty() {
 
-#Grab latest version
-#jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
-#jetty9Path=`basename ${jetty9File}  .tar.gz`
-#jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
-
-#Grab 9.2.4 version
+#Install specific version
 jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/jetty-distribution-9.2.4.v20141103.tar.gz"
 jetty9File="${jetty9URL##*/}"
 jetty9Path=`basename ${jetty9File}  .tar.gz`
+
+#Download latest stable
+#jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+#jetty9Path=`basename ${jetty9File}  .tar.gz`
+#jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
 
         if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
         then
@@ -918,12 +918,13 @@ jetty9Path=`basename ${jetty9File}  .tar.gz`
 		fi
                 cd /opt
                 tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
-		mkdir "/opt/${jetty9Path}/base"
-		for i in etc lib resources webapps start.ini; do cp -r /opt/${jetty9Path}/$i /opt/${jetty9Path}/base/; done
+		mkdir -p "/opt/${jetty9Path}/base/tmp"
+		for i in etc lib resources webapps logs start.ini; do cp -r /opt/${jetty9Path}/$i /opt/${jetty9Path}/base/; done
                 ln -s /opt/${jetty9Path} /opt/jetty
 		sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
 		sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
 		sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/base/g' /opt/jetty/bin/jetty.sh
+		sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/base\/tmp/g' /opt/jetty/bin/jetty.sh
 		useradd jetty
 		chown jetty:jetty /opt/jetty/ -R
 		ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
