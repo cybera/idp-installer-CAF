@@ -1590,6 +1590,8 @@ ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customiz
 
 	containerDist="Jetty9"
 
+        patchFirewall
+
 	# check for installed IDP
 	setVarUpgradeType
 
@@ -1614,8 +1616,6 @@ ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customiz
 	setJavaCACerts
 
 	generatePasswordsForSubsystems
-
-	patchFirewall
 
 	installJetty
 	# moved from above tomcat, to here just after.
