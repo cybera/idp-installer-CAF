@@ -90,63 +90,58 @@ ${fetchCmd} ${idpPath}/credentials/md-signer.crt http://md.swamid.se/md/md-signe
 performStepsForShibbolethUpgradeIfRequired ()
 
 {
-			echo -e "${my_local_override_msg}"
 
+			echo -e "${my_local_override_msg}"
 
 if [ "${upgrade}" -eq 1 ]; then
 
 ${Echo} "Previous installation found, performing upgrade."
 
-	eval ${distCmd1}
-	cd /opt
-	currentShib=`ls -l /opt/shibboleth-identityprovider | awk '{print $NF}'`
-	currentVer=`${Echo} ${currentShib} | awk -F\- '{print $NF}'`
-	if [ "${currentVer}" = "${shibVer}" ]; then
-		mv ${currentShib} ${currentShib}.${ts}
-	fi
+        eval ${distCmd1}
+        cd /opt
+        currentShib=`ls -l /opt/shibboleth-identityprovider | awk '{print $NF}'`
+        currentVer=`${Echo} ${currentShib} | awk -F\- '{print $NF}'`
+        if [ "${currentVer}" = "${shibVer}" ]; then
+                mv ${currentShib} ${currentShib}.${ts}
+        fi
 
-	if [ ! -f "${Spath}/files/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
-		fetchShibboleth
-	fi
-	unzip -q ${Spath}/files/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
-	chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
+        if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
+                fetchAndUnzipShibbolethIdP
+        fi
+        #unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
+        chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
 
-	unlink /opt/shibboleth-identityprovider
-	ln -s /opt/shibboleth-identityprovider-${shibVer} /opt/shibboleth-identityprovider
+        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
+        tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
 
-	if [ -d "/opt/cas-client-${casVer}" ]; then
-		installCasClientIfEnabled
-	fi
+        unlink /opt/shibboleth-identityprovider
+        ln -s /opt/shibboleth-identityprovider-${shibVer} /opt/shibboleth-identityprovider
 
-	if [ -d "/opt/ndn-shib-fticks" ]; then
-		if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
-			cd /opt/ndn-shib-fticks
-			mvn >> ${statusFile} 2>&1
-		fi
-		cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
-	else
-		fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
+        if [ -d "/opt/cas-client-${casVer}" ]; then
+                installCasClientIfEnabled
+        fi
 
-		if [ "${fticks}" != "n" ]; then
-			installFticksIfEnabled
-		fi
-	fi
+        if [ -d "/opt/ndn-shib-fticks" ]; then
+                if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
+                        cd /opt/ndn-shib-fticks
+                        mvn >> ${statusFile} 2>&1
+                fi
+                cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
+        else
+                fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
 
-	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
-	fi
+                if [ "${fticks}" != "n" ]; then
+                        installFticksIfEnabled
+                fi
+        fi
 
-	cd /opt
-	tar zcf ${bupFile} shibboleth-idp
+        if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+        fi
 
-	cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
-
-	setJavaHome
-	cd /opt/shibboleth-identityprovider
-	${Echo} "\n\n\n\nRunning shiboleth installer"
-	sh install.sh -Dinstall.config=no -Didp.home.input="/opt/shibboleth-idp" >> ${statusFile} 2>&1
+        setJavaHome
 else
-	${Echo} "\nNot an Upgrade but a fresh Shibboleth Install"
+        ${Echo} "\nThis is a fresh Shibboleth Install"
 
 
 fi
