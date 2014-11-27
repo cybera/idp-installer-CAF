@@ -48,8 +48,10 @@ setBackTitle ()
 installDependanciesForInstallation ()
 {
 	${Echo} "Updating repositories and installing generic dependencies"
+	${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 	eval ${distCmdU} >> ${statusFile} 2>&1
 	eval ${distCmd1} >> ${statusFile} 2>&1
+	${Echo} "Done."
 }
 
 fetchJavaIfNeeded ()

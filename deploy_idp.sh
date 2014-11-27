@@ -133,11 +133,11 @@ federationSpecificInstallerOverrides="${Spath}/files/${my_ctl_federation}/script
 
 if [ -f "${federationSpecificInstallerOverrides}" ]
 then
-	${Echo} "\n\nAdding federation specific overrides for the install process from ${federationSpecificInstallerOverrides}"
+	${Echo} "Adding federation specific overrides for the install process from ${federationSpecificInstallerOverrides}" >> ${statusFile} 2>&1
 	. ${federationSpecificInstallerOverrides}
 else
 	${Echo} "\n\nNo federation specific overrides detected for federation: ${my_ctl_federation} (if this was blank, the config file does not contain BASH variable my_ctl_federation)"
-	${Echo} "\n\nIf there was a value set, but no override file exists, then this installer may be incomplete for that federation. \nPlease refer to the developer docs in ~/docs, exiting now"
+	${Echo} "\n\nIf there was a value set, but no override file exists, then this installer may be incomplete for that federation. \nPlease refer to the developer docs in ~/docs, exiting now" 
 	exit
 fi
 
