@@ -109,9 +109,11 @@ setJavaHome () {
 
 	unset JAVA_HOME
 
-		${Echo} "Installing Java OpenJDK..."
+		${Echo} "Installing Java OpenJDK packages ..."
+		${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 		eval ${distCmd2}
 		eval ${distCmd3}
+		${Echo} "Done."
 
 	javaBin=`which java`
 	if [ -z "${JAVA_HOME}" ]; then
@@ -135,36 +137,31 @@ setJavaHome () {
 	JAVA_HOME="${JAVA_HOME%/}"
 	echo "***javahome is: ${JAVA_HOME}"
 
-
 	# validate java_home and ensure it runs as expected before going any further
-
 	${JAVA_HOME}/bin/java -version >> ${statusFile} 2>&1
-
-
-
 
 	retval=$?
 	if [ "${retval}" -ne 0 ]; then
-		${Echo} "\n\n\nAn error has occurred in the configuration of the JAVA_HOME variable."
+		${Echo} "\nAn error has occurred in the configuration of the JAVA_HOME variable."
 		${Echo} "Please review the java installation and status.log to see what went wrong."
 		${Echo} "Install is aborted until this is resolved."
 		cleanBadInstall
 		exit
 	else
 
-		${Echo} "\n\n\n JAVA_HOME version verified as good."
+		${Echo} "JAVA_HOME version verified as good."
 		jEnvString="export JAVA_HOME=${JAVA_HOME}"
 		
 		 if [ -z "`grep 'JAVA_HOME' /root/.bashrc`" ]; then
 		 	
 		 	 ${Echo} "${jEnvString}" >> /root/.bashrc
-			 ${Echo} "\n\n\n JAVA_HOME added to end of /root/.bashrc"
+			 ${Echo} "JAVA_HOME added to end of /root/.bashrc"
 		
 		 else
 
 	 	 	 ${Echo} "${jEnvString}" >> /root/.bashrc
-			 ${Echo} "\n\n\n ***EXISTING JAVA_HOME DETECTED AND OVERRIDDEN!***"
-			 ${Echo} "\n A new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n\n"
+			 ${Echo} "***EXISTING JAVA_HOME DETECTED AND OVERRIDDEN!***"
+			 ${Echo} "A new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n"
 			
 		 fi
 
@@ -379,7 +376,7 @@ installFticksIfEnabled() {
 if [ "${fticks}" != "n" ]; then
 
 	${Echo} "Installing ndn-shib-fticks"
-
+	${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 		eval ${distCmd2} >> ${statusFile} 2>&1
 		Cres=$?
 
@@ -424,8 +421,10 @@ installEPTIDSupport ()
 
 		if [ "${isInstalled}" -ne 0 ]; then
 			export DEBIAN_FRONTEND=noninteractive
-			${Echo} "Installing mysql server..."
+			${Echo} "Installing mysql server packages..."
+			${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 			eval ${distCmd5} >> ${statusFile} 2>&1
+			${Echo} "Done."
 
 			mysqldTest=`pgrep mysqld`
 			if [ -z "${mysqldTest}" ]; then
@@ -531,8 +530,10 @@ installTomcat() {
 		isInstalled=$?
 	fi
 	if [ "${isInstalled}" -ne 0 ]; then
-		${Echo} "Installing Tomcat6..."
+		${Echo} "Installing Tomcat6 packages..."
+		${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 		eval ${distCmd4}
+		${Echo} "Done."
 		if [ "${dist}" != "ubuntu" ]; then
 			/sbin/chkconfig tomcat6 on
 		fi
@@ -973,7 +974,7 @@ configShibbolethSSLForLDAPJavaKeystore()
 	# note the numerical comparison of 
 	if [ "$numLDAPCertificateFiles" -ge "$minRequiredLDAPCertificateFiles" ]; then
 
-		${Echo} "Successfully fetched LDAP SSL certificate(s) fetch from LDAP directory. Number loaded: ${numLDAPCertificateFiles} into this keystore ${javaCAcerts}\n"
+		${Echo} "Successfully fetched LDAP SSL certificate(s) fetch from LDAP directory. Number loaded: ${numLDAPCertificateFiles} into this keystore ${javaCAcerts}"
 		
 
 	else
@@ -1247,14 +1248,14 @@ notifyUserBeforeExit()
 {
 
 	${Echo} "======================================"
-	${Echo} "Install processing complete\n\n\n"
+	${Echo} "Install processing complete\n\n"
 
 	if [ "${selfsigned}" = "n" ]; then
 		cat ${certREQ}
-		${Echo} "\n\nLooks like you have chosen to use use a commercial certificate for Shibboleth\n"
+		${Echo} "Looks like you have chosen to use use a commercial certificate for Shibboleth"
 		${Echo} "Here is the certificate request you need to request a certificate from a commercial provider"
 		${Echo} "Or replace the cert files in ${certpath}"
-		${Echo} "\n\nNOTE!!! the keystore for https is a PKCS12 store\n\n"
+		${Echo} "\nNOTE!!! the keystore for https is a PKCS12 store\n"
 	fi
 	${Echo} ""
 	${Echo} "If you installed Shibboleth, the default installation for Shibboleth is done.\n"
@@ -1262,12 +1263,12 @@ notifyUserBeforeExit()
 	${Echo} "Certificate for idp metadata is in the file: /opt/shibboleth-idp/credentials/idp.crt"
 
 if [ "${type}" = "ldap" ]; then
-	${Echo} "\n\n"
-	${Echo} "Looks like you have chosen to use ldap for Shibboleth single sign on.\n"
+	${Echo} "\n"
+	${Echo} "Looks like you have chosen to use ldap for Shibboleth single sign on."
 	${Echo} "Please read this to customize the logon page: https://wiki.shibboleth.net/confluence/display/SHIB2/IdPAuthUserPassLoginPage"
 fi
 
-	${Echo} "\n\nProcessing complete. You may want to reboot to ensure all services start up as expected.\n\nExiting.\n"
+	${Echo} "Processing complete. You may want to reboot to ensure all services start up as expected.\nExiting.\n"
 
 
 }
@@ -1363,10 +1364,10 @@ ${Echo} "Previous installation found, performing upgrade."
 
 	setJavaHome
 	cd /opt/shibboleth-identityprovider
-	${Echo} "\n\n\n\nRunning shiboleth installer"
+	${Echo} "\nRunning shiboleth installer"
 	sh install.sh -Dinstall.config=no -Didp.home.input="/opt/shibboleth-idp" >> ${statusFile} 2>&1
 else
-	${Echo} "\nThis is a fresh Shibboleth Install"
+	${Echo} "This is a fresh Shibboleth Install"
 
 
 fi

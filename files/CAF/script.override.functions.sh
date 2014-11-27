@@ -4,7 +4,7 @@
 my_local_override_msg="Overriden by ${my_ctl_federation}"
 my_ctl_functionOverrides="configTomcatSSLServerKey installCertificates configShibbolethFederationValidationKey performStepsForShibbolethUpgradeIfRequired askForSaveConfigToLocalDisk patchShibbolethLDAPLoginConfigs"
 
-echo -e "\n\nOverriding functions: ${my_ctl_functionOverrides}\n\n"
+echo -e "Overriding functions: ${my_ctl_functionOverrides}"
 
 
 #
