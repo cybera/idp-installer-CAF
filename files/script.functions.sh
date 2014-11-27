@@ -109,6 +109,7 @@ setJavaHome () {
 
 	unset JAVA_HOME
 
+		${Echo} "Installing Java OpenJDK..."
 		eval ${distCmd2}
 		eval ${distCmd3}
 
@@ -423,6 +424,7 @@ installEPTIDSupport ()
 
 		if [ "${isInstalled}" -ne 0 ]; then
 			export DEBIAN_FRONTEND=noninteractive
+			${Echo} "Installing mysql server..."
 			eval ${distCmd5} >> ${statusFile} 2>&1
 
 			mysqldTest=`pgrep mysqld`
@@ -529,6 +531,7 @@ installTomcat() {
 		isInstalled=$?
 	fi
 	if [ "${isInstalled}" -ne 0 ]; then
+		${Echo} "Installing Tomcat6..."
 		eval ${distCmd4}
 		if [ "${dist}" != "ubuntu" ]; then
 			/sbin/chkconfig tomcat6 on
