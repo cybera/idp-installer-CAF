@@ -1038,6 +1038,8 @@ patchTomcatConfigs ()
 		sed -e '/endorsed/ s/^#*/#/' -i ${tomcatSettingsFile}
 	fi
 
+        echo "JAVA_OPTS=\"-Xms512m -Xmx512m -XX:MaxPermSize=128m\"" >> ${tomcatSettingsFile}
+
 	if [ "${dist}" == "ubuntu" ]; then
 		if [ "${AUTHBIND}" != "yes" ]; then
 			${Echo} "AUTHBIND=yes" >> ${tomcatSettingsFile}
