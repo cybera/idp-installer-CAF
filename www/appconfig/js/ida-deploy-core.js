@@ -499,7 +499,11 @@ $(document).ready(function() {            $("[rel='tooltip']").tooltip();     })
 
         }
 
-
+        if ( ($("#type").val())!=="ldap" ) {
+            $("#ldapRow").hide();
+        } else {
+            $("#ldapRow").show();
+        }
 	if ( ($("#type").val())!=="cas" ) {
 		$("#casurlRow").hide();
 	} else {
