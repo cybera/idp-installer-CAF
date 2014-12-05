@@ -791,16 +791,16 @@ installer_section3_title:
 		<table>
 		<tr><td id="casurlRow">
                  Cas Server Login URL
-                  <img id="ldapserverToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
-          rel="tooltip" title="The Base DN is where the user search is commenced from."
+                  <img id="casserverToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
+          rel="tooltip" title="An unauthenticated user will be redirected to this URL"
            />
            :
                   <input  style="width: 250px;" id="caslogurl" type="text" placeholder="e.g. http://casserver/login" onchange="updateCtx(this)" >
                   <BR>                  
 
                  Cas Server Validation URL
-                  <img id="ldapserverToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
-          rel="tooltip" title="The Base DN is where the user search is commenced from."
+                  <img id="casserverToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
+          rel="tooltip" title="CAS Ticket validation URL. Idp will validate the SP ticket to this CAS URL."
            />
            :
                   <input  style="width: 250px;" id="casurl" type="text" placeholder="e.g. http://casserver/" onchange="updateCtx(this)" >
