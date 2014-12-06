@@ -109,8 +109,6 @@ then
 
 	ValidateConfig
 
-	validateConnectivity
-
 	#exit
 
 else
@@ -126,6 +124,7 @@ fi
 . ${Spath}/files/script.functions.sh
 . ${Spath}/files/script.eduroam.functions.sh
 
+validateConnectivity "${type}"
 
 # import the federation override file. It must exist even if it is empty.
 federationSpecificInstallerOverrides="${Spath}/files/${my_ctl_federation}/script.override.functions.sh"

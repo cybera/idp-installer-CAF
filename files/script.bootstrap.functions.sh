@@ -74,7 +74,7 @@ ValidateConfig() {
 	
 	# uses indirect reference for variable names. 
 	
-	# ${Echo} "======working with ${vc_attribute_list}"
+	#${Echo} "======working with ${vc_attribute_list}"
 
 
 
@@ -101,14 +101,14 @@ ValidateConfig() {
 	#
 	# announce and exit when attributes are non zero
 	#
-		if [ "XXXXXX" ==  "${tmpBailIfHasAny}XXXXXX" ]
+		if [ "XXXXXX" ==  "${tmpBailIfHasAny}XXXXXX" -o "${tmpBailIfHasAny}" == " ldapserver  ldapbinddn  ldappass  ldapbasedn  subsearch " -o "${tmpBailIfHasAny}" == " casurl  caslogurl " ]
 		then
 			${Echo} ""
 		else
 			${Echo} "\n\nDoing pre-flight check..\n"
 			sleep 2;
 			${Echo} "Discovered some required field as blank from file: ${Spath}/config\n"
-			${Echo} " ${tmpBailIfHasAny}";
+			${Echo} "q${tmpBailIfHasAny}q";
 			echo ""	
 			${Echo} "Please check out the file for the above empty attributes. If needed, regenerate from the config tool at ~/www/index.html\n\n"
 			exit 1;
@@ -155,7 +155,8 @@ guessLinuxDist() {
 	fi
 }
 
-validateConnectivity()
+
+validateConnectivityLDAP()
 
 {
 
@@ -178,6 +179,7 @@ function el () {
         ${Echo} "$1" >> ${statusFile}
         $1 &>> ${statusFile}
 }
+
 
 ##############################
 # install additional packages
@@ -388,6 +390,94 @@ fi
 
 ${Echo} "Starting installation script..."
 
+
+}
+
+
+validateConnectivityCAS ()
+
+{
+
+##############################
+# functions definition
+##############################
+function elo () {
+        # execute log and output
+        $1 | tee -a ${statusFile}
+}
+
+function el () {
+        # execute and log
+        ${Echo} "$1" >> ${statusFile}
+        $1 &>> ${statusFile}
+}
+
+
+##############################
+# ntp server check
+##############################
+elo "${Echo} Validating ntpserver (${ntpserver}) reachability..."
+${Echo} "ntpdate ${ntpserver}" >> ${statusFile}
+ntpcheck=$(ntpdate ${ntpserver} 2>&1 | tee -a ${statusFile} | awk -F":" '{print $4}' | awk '{print $1 $2}')
+
+if [ $ntpcheck == "noserver"  ]
+        then
+                elo "${Echo} ntpserver - - - - failed"
+                NTPSERVER="failed"
+        else
+                elo "${Echo} ntpserver - - - - ok"
+                NTPSERVER="ok"
+fi
+###############################
+# summary results
+###############################
+elo "${Echo} ---------------------------------------------"
+${Echo} "PING        - $PING"
+${Echo} "NTPSERVER   - $NTPSERVER"
+elo "${Echo} ---------------------------------------------"
+
+###############################
+# pause and warning message
+###############################
+if [ $PING == "failed" -o $PING == "warning" -o $NTPSERVER == "failed" ];
+        then
+                MESSAGE="[WARNING] Reachability test completed with some uncritical exceptions. Do you want to continue? [Y/n] "
+                ${Echo} -n $MESSAGE
+                read choice
+                if [ ! -z $choice ]
+                then
+                        if [ $choice == "Y" -o $choice == "y" -o $choice == "yes" ]
+                                then
+                                        ${Echo} "Continue..."
+                                else
+                                        ${Echo} "Installation has been canceled."
+                                        exit 1
+                        fi
+                else
+                        ${Echo} "Continue..."
+                fi
+        else
+                MESSAGE="[SUCCESS] Reachability test has been completed successfully. [press Enter to continue] "
+                ${Echo} -n $MESSAGE
+                read choice
+fi
+
+${Echo} "Starting installation script..."
+
+
+}
+
+
+validateConnectivity ()
+
+{
+
+case "$1" in
+    "ldap" )
+        validateConnectivityLDAP ;;
+    "cas" )
+        validateConnectivityCAS ;;
+esac
 
 }
 
