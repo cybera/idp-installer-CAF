@@ -650,28 +650,32 @@ askForConfigurationData() {
 		ntpserver=$(askString "NTP server" "Please input your NTP server address." "ntp.${Dname}")
 	fi
 
-	if [ -z "${ldapserver}" ]; then
-		ldapserver=$(askString "LDAP server" "Please input yout LDAP server(s) (ldap.xxx.yy).\n\nSeparate multiple servers with spaces.\nLDAPS is used by default." "ldap.${Dname}")
-	fi
+	if [ "${type}" = "ldap" ]; then
 
-	if [ -z "${ldapbasedn}" ]; then
-		ldapbasedn=$(askString "LDAP Base DN" "Please input your LDAP Base DN")
-	fi
-
-	if [ -z "${ldapbinddn}" ]; then
-		ldapbinddn=$(askString "LDAP Bind DN" "Please input your LDAP Bind DN")
-	fi
-
-	if [ -z "${ldappass}" ]; then
-		ldappass=$(askString "LDAP Password" "Please input your LDAP Password")
-	fi
-
-	if [ "${type}" = "ldap" -a -z "${subsearch}" ]; then
-		subsearch=$(askYesNo "LDAP Subsearch" "Do you want to enable LDAP subtree search?")
-		subsearch="false"
-		if [ "${subsearchNum}" = "y" ]; then
-			subsearch="true"
+		if [ -z "${ldapserver}" ]; then
+			ldapserver=$(askString "LDAP server" "Please input yout LDAP server(s) (ldap.xxx.yy).\n\nSeparate multiple servers with spaces.\nLDAPS is used by default." "ldap.${Dname}")
 		fi
+
+		if [ -z "${ldapbasedn}" ]; then
+			ldapbasedn=$(askString "LDAP Base DN" "Please input your LDAP Base DN")
+		fi
+
+		if [ -z "${ldapbinddn}" ]; then
+			ldapbinddn=$(askString "LDAP Bind DN" "Please input your LDAP Bind DN")
+		fi
+
+		if [ -z "${ldappass}" ]; then
+			ldappass=$(askString "LDAP Password" "Please input your LDAP Password")
+		fi
+
+		if [ -z "${subsearch}" ]; then
+			subsearch=$(askYesNo "LDAP Subsearch" "Do you want to enable LDAP subtree search?")
+			subsearch="false"
+			if [ "${subsearchNum}" = "y" ]; then
+				subsearch="true"
+			fi
+		fi
+
 	fi
 
 	if [ -z "${ninc}" ]; then
@@ -1446,7 +1450,7 @@ ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customiz
 	# Override per federation
 	installCertificates
 
-	configShibbolethSSLForLDAPJavaKeystore
+	[[ "${type}" == "ldap"  ]] && configShibbolethSSLForLDAPJavaKeystore
 
 	# Override per federation
 	configTomcatSSLServerKey

@@ -101,7 +101,7 @@ ValidateConfig() {
 	#
 	# announce and exit when attributes are non zero
 	#
-		if [ "XXXXXX" ==  "${tmpBailIfHasAny}XXXXXX" -o "${tmpBailIfHasAny}" == " ldapserver  ldapbinddn  ldappass  ldapbasedn  subsearch " -o "${tmpBailIfHasAny}" == " casurl  caslogurl " ]
+		if [ "XXXXXX" ==  "${tmpBailIfHasAny}XXXXXX" -o "${tmpBailIfHasAny}" == " ldapserver  ldapbinddn  ldappass  ldapbasedn " -o "${tmpBailIfHasAny}" == " casurl  caslogurl " ]
 		then
 			${Echo} ""
 		else
@@ -156,6 +156,21 @@ guessLinuxDist() {
 }
 
 
+elo ()
+
+{
+        # execute log and output
+        $1 | tee -a ${statusFile}
+}
+
+el ()
+
+{
+        # execute and log
+        ${Echo} "$1" >> ${statusFile}
+        $1 &>> ${statusFile}
+}
+
 validateConnectivityLDAP()
 
 {
@@ -165,21 +180,6 @@ validateConnectivityLDAP()
 ##############################
 distr_install_nc='yum install -y nc'
 distr_install_ldaptools='yum install -y openldap-clients'
-
-##############################
-# functions definition
-##############################
-function elo () {
-        # execute log and output
-        $1 | tee -a ${statusFile}
-}
-
-function el () {
-        # execute and log
-        ${Echo} "$1" >> ${statusFile}
-        $1 &>> ${statusFile}
-}
-
 
 ##############################
 # install additional packages
@@ -397,21 +397,6 @@ ${Echo} "Starting installation script..."
 validateConnectivityCAS ()
 
 {
-
-##############################
-# functions definition
-##############################
-function elo () {
-        # execute log and output
-        $1 | tee -a ${statusFile}
-}
-
-function el () {
-        # execute and log
-        ${Echo} "$1" >> ${statusFile}
-        $1 &>> ${statusFile}
-}
-
 
 ##############################
 # ntp server check
