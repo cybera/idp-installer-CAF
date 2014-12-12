@@ -50,6 +50,7 @@ installDependanciesForInstallation ()
 	${Echo} "Updating repositories and installing generic dependencies"
 	#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 	eval ${distCmdU} &> >(tee -a ${statusFile}) 
+	eval ${distCmdUa} &> >(tee -a ${statusFile})
 	eval ${distCmd1} &> >(tee -a ${statusFile})
 	${Echo} "Done."
 }
@@ -747,21 +748,29 @@ askForConfigurationData() {
 setDistCommands() {
 	if [ ${dist} = "ubuntu" ]; then
 		distCmdU=${ubuntuCmdU}
+		distCmdUa=${ubuntuCmdUa}
 		distCmd1=${ubuntuCmd1}
 		distCmd2=${ubuntuCmd2}
 		distCmd3=${ubuntuCmd3}
 		distCmd4=${ubuntuCmd4}
 		distCmd5=${ubuntuCmd5}
 		tomcatSettingsFile=${tomcatSettingsFileU}
+		dist_install_nc=${ubutnu_install_nc}
+		dist_install_ldaptools=${ubuntu_install_ldaptools}
+		distCmdEduroam=${ubuntuCmdEduroam}
 	elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
 		if [ ${dist} = "centos" ]; then
 			redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
 			distCmdU=${centosCmdU}
+			distCmdUa=${centosCmdUa}
 			distCmd1=${centosCmd1}
 			distCmd2=${centosCmd2}
 			distCmd3=${centosCmd3}
 			distCmd4=${centosCmd4}
 			distCmd5=${centosCmd5}
+			dist_install_nc=${centos_install_nc}
+                	dist_install_ldaptools=${centos_install_ldaptools}
+			distCmdEduroam=${centosCmdEduroam}
 		else
 			redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
 			distCmdU=${redhatCmdU}
@@ -770,6 +779,9 @@ setDistCommands() {
 			distCmd3=${redhatCmd3}
 			distCmd4=${redhatCmd4}
 			distCmd5=${redhatCmd5}
+			dist_install_nc=${redhat_install_nc}
+                        dist_install_ldaptools=${redhat_install_ldaptools}
+			distCmdEduroam=${redhatCmdEduroam}
 		fi
 		tomcatSettingsFile=${tomcatSettingsFileC}
 

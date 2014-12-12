@@ -162,8 +162,8 @@ validateConnectivity()
 ##############################
 # variables definition
 ##############################
-distr_install_nc='yum install -y nc'
-distr_install_ldaptools='yum install -y openldap-clients'
+#distr_install_nc='yum install -y nc'
+#distr_install_ldaptools='yum install -y openldap-clients'
 
 ##############################
 # functions definition
@@ -184,8 +184,8 @@ function el () {
 ##############################
 elo "${Echo} ---------------------------------------------"
 elo "${Echo} Installing additional software..."
-elo "$distr_install_nc"
-elo "$distr_install_ldaptools"
+elo "$dist_install_nc"
+elo "$dist_install_ldaptools"
 elo "${Echo} Validating ${ldapserver} reachability..."
 
 ##############################
