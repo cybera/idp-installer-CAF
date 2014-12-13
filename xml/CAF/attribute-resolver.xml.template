@@ -360,7 +360,7 @@
 		principalCredential="LdApPaSsWoRd">
 		<dc:FilterTemplate>
 		<![CDATA[
-			(sAMAccountName=$requestContext.principalName)
+			(uid=$requestContext.principalName)
 		]]>
 		</dc:FilterTemplate>
 	</resolver:DataConnector>

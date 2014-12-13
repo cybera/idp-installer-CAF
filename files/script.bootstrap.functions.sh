@@ -158,7 +158,7 @@ guessLinuxDist() {
 validateConnectivity()
 
 {
-
+if [ "$1" == "test" ]; then return 0; fi 
 ##############################
 # variables definition
 ##############################

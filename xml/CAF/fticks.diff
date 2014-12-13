@@ -3,7 +3,7 @@
 > 		<syslogHost>logger.canarie.ca</syslogHost>
 > 		<federationIdentifier>caf</federationIdentifier>
 > 		<version>1.0</version>
-> 		<keyFile>/opt/shibboleth-idp/conf/fticks-key.txt</keyFile>
+> 		<!--<keyFile>/opt/shibboleth-idp/conf/fticks-key.txt</keyFile>-->
 > 	</appender>
 > 
 > 
