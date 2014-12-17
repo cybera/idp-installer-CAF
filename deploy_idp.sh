@@ -74,6 +74,7 @@ Spath="$(cd "$(dirname "$0")" && pwd)"
 setEcho
 # (validateConfig)
 guessLinuxDist
+setDistCommands
 
 ${Echo} "\n\n\nStarting up.\n\n\n"
 ${Echo} "Live logging can be seen by this command in another window:\ntail -f ${statusFile}"
@@ -96,8 +97,6 @@ if [ ! -f "/usr/bin/host" -o ! -f "/usr/bin/dos2unix" ]; then
 		yum -y install bind-utils dos2unix &> >(tee -a ${statusFile})
 	fi
 fi
-
-
 
 # read config file as early as we can so we may use the variables
 # use dos2unix on file first however in case it has some mad ^M in it
@@ -124,9 +123,6 @@ else
 	exit
 
 fi
-
-
-
 
 
 . ${Spath}/files/script.functions.sh
@@ -180,7 +176,7 @@ $Echo "" > ${statusFile}
 #################################
 #################################
 
-setDistCommands
+#setDistCommands
 setHostnames
 
 
