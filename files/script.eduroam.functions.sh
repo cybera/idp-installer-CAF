@@ -194,10 +194,12 @@ deployEduroamCustomizations() {
 	fi
 
 # disable SELinux as it interferes with the winbind process.
+	if [ "${dist}" != "ubuntu" ]; then
 
 	echo "updating SELinux to disable it" >> ${statusFile} 2>&1 
 	cp ${templatePath}/etc/sysconfig/selinux.template /etc/sysconfig/selinux 
 
+	fi
 # add radiusd to group wbpriv 
 	echo "adding user radiusd to WINBIND/SAMBA privilege group wbpriv" >> ${statusFile} 2>&1 
 	usermod -a -G wbpriv radiusd
