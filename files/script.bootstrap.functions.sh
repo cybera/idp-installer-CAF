@@ -238,7 +238,6 @@ function el () {
 ##############################
 # install additional packages
 ##############################
-echo "__+${dist_install_ldaptools}__"
 elo "${Echo} ---------------------------------------------"
 elo "${Echo} Installing additional software..."
 elo "$dist_install_nc"
