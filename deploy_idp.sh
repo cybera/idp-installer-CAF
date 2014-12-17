@@ -79,7 +79,6 @@ setDistCommands
 ${Echo} "\n\n\nStarting up.\n\n\n"
 ${Echo} "Live logging can be seen by this command in another window:\ntail -f ${statusFile}"
 ${Echo} "Sleeping for 4 sec and then beginning processing..."
-touch ${statusFile}
 ${Echo} "==============================================================================="
 sleep 4
 # bootstrapping step from minimal install
@@ -171,7 +170,7 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-$Echo "" > ${statusFile}
+$Echo "" >> ${statusFile}
 
 #################################
 #################################

@@ -168,6 +168,8 @@ setDistCommands() {
                 dist_install_nc=${ubutnu_install_nc}
                 dist_install_ldaptools=${ubuntu_install_ldaptools}
                 distCmdEduroam=${ubuntuCmdEduroam}
+		distEduroamPath=${ubuntuEduroamPath}
+		distRadiusGroup=${ubuntuRadiusGroup}
         elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
                 if [ ${dist} = "centos" ]; then
                         redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
@@ -181,6 +183,8 @@ setDistCommands() {
                         dist_install_nc=${centos_install_nc}
                         dist_install_ldaptools=${centos_install_ldaptools}
                         distCmdEduroam=${centosCmdEduroam}
+			distEduroamPath=${centosEduroamPath}
+			distRadiusGroup=${centosRadiusGroup}
                 else
                         redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
                         distCmdU=${redhatCmdU}
@@ -192,6 +196,8 @@ setDistCommands() {
                         dist_install_nc=${redhat_install_nc}
                         dist_install_ldaptools=${redhat_install_ldaptools}
                         distCmdEduroam=${redhatCmdEduroam}
+			distEduroamPath=${redhatEduroamPath}
+			distRadiusGroup=${redhatRadiusGroup}
                 fi
                 tomcatSettingsFile=${tomcatSettingsFileC}
 
