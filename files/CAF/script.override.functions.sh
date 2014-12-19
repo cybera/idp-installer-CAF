@@ -2,53 +2,52 @@
 
 # announce the override action since this is just a plain include
 my_local_override_msg="Overriden by ${my_ctl_federation}"
-my_ctl_functionOverrides="configTomcatSSLServerKey installCertificates configShibbolethFederationValidationKey performStepsForShibbolethUpgradeIfRequired askForSaveConfigToLocalDisk patchShibbolethLDAPLoginConfigs"
+my_ctl_functionOverrides="configContainerSSLServerKey installCertificates configShibbolethFederationValidationKey performStepsForShibbolethUpgradeIfRequired askForSaveConfigToLocalDisk patchShibbolethLDAPLoginConfigs"
 
 echo -e "Overriding functions: ${my_ctl_functionOverrides}" >> ${statusFile} 2>&1
 
 
 #
-#	GLOBAL overrides
+#       GLOBAL overrides
 #
 #  Things you want to be available to any BASH function in the script should be overridden here.
 
-		echo -e "Overriding certOrg, CertCN, certC" >> ${statusFile} 2>&1
-		certOrg="${freeRADIUS_svr_org_name}"
-		certCN="${freeRADIUS_svr_commonName}"
-		certC="CA"
-		certLongC="Canada"
-		certAcro="${certOrg}${certC}"
+                echo -e "Overriding certOrg, CertCN, certC" >> ${statusFile} 2>&1
+                certOrg="${freeRADIUS_svr_org_name}"
+                certCN="${freeRADIUS_svr_commonName}"
+                certC="CA"
+                certLongC="Canada"
+                certAcro="${certOrg}${certC}"
 
-# this command takes 4min 45sec to run on a core i7 8gb ram SSD disk. 
-# overriding as the other yum commands 
+# this command takes 4min 45sec to run on a core i7 8gb ram SSD disk.
+# overriding as the other yum commands
 centosCmdU="yum -y update; yum clean all"
 #centosCmdU="yum version"
 # -y update; yum clean all"
 
 
-configTomcatSSLServerKey()
+configContainerSSLServerKey()
 
 {
-		echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 
-
-	#set up ssl store
-	if [ ! -s "${certpath}server.key" ]; then
-		${Echo} "Generating SSL key and certificate request"
-		openssl genrsa -out ${certpath}server.key 2048 2>/dev/null
-		openssl req -new -key ${certpath}server.key -out ${certREQ} -config ${Spath}/files/openssl.cnf -subj "/CN=${certCN}/O=${certOrg}/C=${certC}"
-	fi
-	if [ "${selfsigned}" = "n" ]; then
-		${Echo} "Put the certificate from TCS in the file: ${certpath}server.crt" >> ${messages}
-		${Echo} "Run: openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name tomcat -passout pass:${httpspass}" >> ${messages}
-	else
-		openssl x509 -req -days 365 -in ${certREQ} -signkey ${certpath}server.key -out ${certpath}server.crt
-		if [ ! -d "/opt/shibboleth-idp/credentials/" ]; then
-			mkdir /opt/shibboleth-idp/credentials/
-		fi
-		openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name tomcat -passout pass:${httpspass}
-	fi
+        #set up ssl store
+        if [ ! -s "${certpath}server.key" ]; then
+                ${Echo} "Generating SSL key and certificate request"
+                openssl genrsa -out ${certpath}server.key 2048 2>/dev/null
+                openssl req -new -key ${certpath}server.key -out ${certREQ} -config ${Spath}/files/openssl.cnf -subj "/CN=${certCN}/O=${certOrg}/C=${certC}"
+        fi
+        if [ "${selfsigned}" = "n" ]; then
+                ${Echo} "Put the certificate from TCS in the file: ${certpath}server.crt" >> ${messages}
+                ${Echo} "Run: openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name container -passout pass:${httpspass}" >> ${messages}
+        else
+                openssl x509 -req -days 365 -in ${certREQ} -signkey ${certpath}server.key -out ${certpath}server.crt
+                if [ ! -d "/opt/shibboleth-idp/credentials/" ]; then
+                        mkdir /opt/shibboleth-idp/credentials/
+                fi
+                openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name container -passout pass:${httpspass}
+        fi
 }
+
 
 installCertificates ()
 
@@ -161,7 +160,7 @@ echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
 	if [ "${fticks}" != "n" ]; then
 		patch /opt/shibboleth-idp/conf/logging.xml -i ${Spath}/xml/CAF/fticks.diff >> ${statusFile} 2>&1
 		touch /opt/shibboleth-idp/conf/fticks-key.txt
-		chown ${tcatUser} /opt/shibboleth-idp/conf/fticks-key.txt
+		chown ${jettyUser} /opt/shibboleth-idp/conf/fticks-key.txt
 	fi
 
 	if [ "${eptid}" != "n" ]; then
@@ -216,67 +215,59 @@ chmod o+r /opt/shibboleth-idp/conf/attribute-filter.xml
 }
 
 
-
-
-
-
-
-
 performStepsForShibbolethUpgradeIfRequired ()
 
 {
-			echo -e "${my_local_override_msg}" >> ${statusFile} 2>&1
-
 
 if [ "${upgrade}" -eq 1 ]; then
 
 ${Echo} "Previous installation found, performing upgrade."
 
-	eval ${distCmd1}
-	cd /opt
-	currentShib=`ls -l /opt/shibboleth-identityprovider | awk '{print $NF}'`
-	currentVer=`${Echo} ${currentShib} | awk -F\- '{print $NF}'`
-	if [ "${currentVer}" = "${shibVer}" ]; then
-		mv ${currentShib} ${currentShib}.${ts}
-	fi
+        eval ${distCmd1} &> >(tee -a ${statusFile})
+        cd /opt
+        currentShib=`ls -l /opt/shibboleth-identityprovider | awk '{print $NF}'`
+        currentVer=`${Echo} ${currentShib} | awk -F\- '{print $NF}'`
+        if [ "${currentVer}" = "${shibVer}" ]; then
+                mv ${currentShib} ${currentShib}.${ts}
+        fi
 
-	if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
-		fetchAndUnzipShibbolethIdP
-	fi
-	#unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
-	chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
+        if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
+                fetchAndUnzipShibbolethIdP
+        fi
+        unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
+        chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
 
-	cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
-	tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
+        cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
+        tar zcfP ${bupFile} --remove-files /opt/shibboleth-idp
 
-	unlink /opt/shibboleth-identityprovider
-	ln -s /opt/shibboleth-identityprovider-${shibVer} /opt/shibboleth-identityprovider
+        unlink /opt/shibboleth-identityprovider
+        ln -s /opt/shibboleth-identityprovider-${shibVer} /opt/shibboleth-identityprovider
 
-	if [ -d "/opt/cas-client-${casVer}" ]; then
-		installCasClientIfEnabled
-	fi
+        if [ -d "/opt/cas-client-${casVer}" ]; then
+                installCasClientIfEnabled
+        fi
 
-	if [ -d "/opt/ndn-shib-fticks" ]; then
-		if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
-			cd /opt/ndn-shib-fticks
-			mvn >> ${statusFile} 2>&1
-		fi
-		cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
-	else
-		fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
+        if [ -d "/opt/ndn-shib-fticks" ]; then
+                if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
+                        cd /opt/ndn-shib-fticks
+                        mvn >> ${statusFile} 2>&1
+                fi
+                cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
+        else
+                fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
 
-		if [ "${fticks}" != "n" ]; then
-			installFticksIfEnabled
-		fi
-	fi
+                if [ "${fticks}" != "n" ]; then
+                        installFticksIfEnabled
+                fi
+        fi
 
-	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
-		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
-	fi
+        if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+        fi
 
-	setJavaHome
+        setJavaHome
 else
-	${Echo} "\nThis is a fresh Shibboleth Install"
+        ${Echo} "\nThis is a fresh Shibboleth Install"
 
 
 fi

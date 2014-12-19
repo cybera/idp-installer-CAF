@@ -109,6 +109,7 @@ deployEduroamCustomizations() {
 	> /etc/samba/smb.conf
 
 # /etc/raddb/modules
+        ln -s /etc/raddb/mods-enabled /etc/raddb/modules
 	cat ${templatePath}/etc/raddb/modules/mschap.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PXYCFG_rEaLm#${freeRADIUS_pxycfg_realm}#" \
@@ -320,27 +321,27 @@ displayMainMenu() {
 
 
 	elif [ "${eduroamTask}" = "installFedSSO" ]
-	then
+                then
 
 
-		if echo "${installer_section0_buildComponentList}" | grep -q "shibboleth"; then
+                        if echo "${installer_section0_buildComponentList}" | grep -q "shibboleth"; then
 
 
-			echo "install of Federated SSO chosen, creating Restore Point" >> ${statusFile} 2>&1
+                                        echo "install of Federated SSO chosen, creating Restore Point" >> ${statusFile} 2>&1
 
-			# FIXME: REDUNDANT? --> softwareInstallMaven
+                                        # FIXME: REDUNDANT? --> softwareInstallMaven
 
-			invokeShibbolethInstallProcess
+                                        invokeShibbolethInstallProcessJetty9
 
-			createRestorePoint
-			echo "Restore Point Completed" >> ${statusFile} 2>&1
-			#	eval ${redhatCmdFedSSO}
-			echo "Update Completed" >> ${statusFile} 2>&1
+                                        createRestorePoint
+                                        echo "Restore Point Completed" >> ${statusFile} 2>&1
+                                #       eval ${redhatCmdFedSSO}
+                                        echo "Update Completed" >> ${statusFile} 2>&1
 
-		else
-			echo "Sorry, necessary configuration for shibboleth is incomplete, please redo config file"
-			exit
-		fi
+                        else
+                                echo "Sorry, necessary configuration for shibboleth is incomplete, please redo config file"
+                                exit
+                fi
 
 	elif [ "${eduroamTask}" = "installAll" ]
 	then
