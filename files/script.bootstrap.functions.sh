@@ -240,7 +240,7 @@ fi
 ##############################
 elo "${Echo} Port availability checking..."
 
-el "nc -z -w5 ${ldapserver} 636 "
+nc ${ldapserver} 636 < /dev/null 2>/dev/null
   if [ $? == "0" ]
     then
         elo "${Echo} port 636 - - - - ok"
@@ -250,7 +250,7 @@ el "nc -z -w5 ${ldapserver} 636 "
         PORT636="failed"
   fi
 
-el "nc -z -w5 ${ldapserver} 389"
+nc ${ldapserver} 389 < /dev/null 2>/dev/null
   if [ $? == "0" ]
     then
         elo "${Echo} port 389 - - - - ok"
