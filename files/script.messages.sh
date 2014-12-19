@@ -62,7 +62,7 @@ BackTitle="IDP Deployer"
 # define commands
 ubuntuCmdU="apt-get -qq update"
 ubuntuCmd1="apt-get -y install patch ntpdate unzip curl"
-ubuntuCmd2="apt-get -y install git-core >> ${statusFile}"
+ubuntuCmd2="apt-get -y install git-core"
 ubuntuCmd3="apt-get -y install openjdk-6-jdk default-jre"
 ubuntuCmd4="apt-get -y install tomcat6"
 ubuntuCmd5="apt-get -y install mysql-server"
