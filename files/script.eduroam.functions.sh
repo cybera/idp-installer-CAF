@@ -171,7 +171,7 @@ deployEduroamCustomizations() {
 
 #	WARNING, see the ${distEduroamPath}/certs/README to 'clean' out certificate bits when you run
 #		this script respect the protections freeRADIUS put in place to not overwrite certs
-
+f [ "${dist}" != "ubuntu" ]; then
 	if [  -e "${distEduroamPath}/certs/server.crt" ] 
 	then
 		echo "bootstrap already run, skipping"
@@ -179,6 +179,7 @@ deployEduroamCustomizations() {
 	
 		(cd ${distEduroamPath}/certs; ./bootstrap )
 	fi
+fi
 
 # ensure proper start/stop at run level 3 for the machine are in place for winbind,smb, and of course, radiusd
 	if [ "${dist}" != "ubuntu" ]; then
@@ -217,9 +218,9 @@ deployEduroamCustomizations() {
 #	${ckCmd} --level 4 iptables off
 #	${ckCmd} --level 5 iptables off
 #	/sbin/service iptables stop
-
-modifyIPTABLESForEduroam
-
+if [ "${dist}" != "ubuntu" ]; then
+	modifyIPTABLESForEduroam
+fi
 
 echo "Start Up processes completed" >> ${statusFile} 2>&1 
 
