@@ -240,8 +240,8 @@ fi
 ##############################
 elo "${Echo} Port availability checking..."
 
-el "nc -z -w5 ${ldapserver} 636 "
-  if [ $? == "0" ]
+output=$(nc ${ldapserver} 636 < /dev/null 2>&1)
+if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
     then
         elo "${Echo} port 636 - - - - ok"
         PORT636="ok"
@@ -250,8 +250,8 @@ el "nc -z -w5 ${ldapserver} 636 "
         PORT636="failed"
   fi
 
-el "nc -z -w5 ${ldapserver} 389"
-  if [ $? == "0" ]
+output=$(nc ${ldapserver} 389 < /dev/null 2>&1)
+if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
     then
         elo "${Echo} port 389 - - - - ok"
         PORT389="ok"
