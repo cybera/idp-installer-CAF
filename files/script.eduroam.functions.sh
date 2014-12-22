@@ -355,7 +355,7 @@ displayMainMenu() {
 		doInstall
 		echo "Installing Shibboleth and Federated SSO configuration" >> ${statusFile} 2>&1
 
-		invokeShibbolethInstallProcess
+		invokeShibbolethInstallProcessJetty9
 
 		echo ""
 		echo "Update Completed" >> ${statusFile} 2>&1
