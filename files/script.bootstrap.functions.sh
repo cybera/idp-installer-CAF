@@ -360,7 +360,10 @@ if [ $CERTIFICATE == "failed" -o $LDAP == "failed" ]
         then
                 MESSAGE="[ERROR] Reachability test has been failed. Installation will exit [press Enter key]: "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+            	fi
                 if [ ! -z $choice ]
                 then
                         if [ $choice != "continue" ]
@@ -376,7 +379,10 @@ elif [ $PING == "failed" -o $PING == "warning" -o $PORT389 == "failed" -o $CERTI
         then
                 MESSAGE="[WARNING] Reachability test completed with some uncritical exceptions. Do you want to continue? [Y/n] "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+            	fi
                 if [ ! -z $choice ]
                 then
                         if [ $choice == "Y" -o $choice == "y" -o $choice == "yes" ]
@@ -392,7 +398,10 @@ elif [ $PING == "failed" -o $PING == "warning" -o $PORT389 == "failed" -o $CERTI
         else
                 MESSAGE="[SUCCESS] Reachability test has been completed successfully. [press Enter to continue] "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+                fi
 fi
 
 ${Echo} "Starting installation script..."
