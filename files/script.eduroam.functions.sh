@@ -180,7 +180,7 @@ if [ "${dist}" != "ubuntu" ]; then
 		(cd ${distEduroamPath}/certs; ./bootstrap )
 	fi
 else
-	dd if=/dev/urandom of=${distEduroamPath}/random count=10
+	dd if=/dev/urandom of=${distEduroamPath}/certs/random count=10
 fi
 
 # ensure proper start/stop at run level 3 for the machine are in place for winbind,smb, and of course, radiusd
