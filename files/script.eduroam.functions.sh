@@ -203,15 +203,22 @@ fi
 	cp ${templatePath}/etc/sysconfig/selinux.template /etc/sysconfig/selinux 
 
 	fi
-# add radiusd to group wbpriv 
+# add radiusd/freerad to group wbpriv/winbindd_priv 
+if [ "${dist}" != "ubuntu" ]; then
 	echo "adding user radiusd to WINBIND/SAMBA privilege group wbpriv" >> ${statusFile} 2>&1 
 	usermod -a -G wbpriv radiusd
-
+else
+	echo "adding user freerad to WINBIND/SAMBA privilege group winbindd_priv" >> ${statusFile} 2>&1
+	usermod -a -G winbindd_priv freerad
+fi
 
 # tweak winbind to permit proper authentication traffic to proceed
 # without this, the NTLM call out for freeRADIUS will not be able to process requests
+if [ "${dist}" != "ubuntu" ]; then
 	chmod ugo+rx /var/run/winbindd
-				
+else
+    	chown root:winbindd_priv /var/lib/samba/winbindd_privileged/				
+fi
 
 # disable iptables on runlevels 3,4,5 for reboot and then disable it right now for good measure
 
