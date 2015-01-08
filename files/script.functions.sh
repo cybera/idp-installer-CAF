@@ -1458,106 +1458,88 @@ invokeShibbolethInstallProcessJetty9 ()
 
         ### Begin of SAML IdP installation Process
 
+	containerDist="Jetty9"
+
+	# check for installed IDP
+	setVarUpgradeType
+
+	setJavaHome
+
+	# Override per federation
+	performStepsForShibbolethUpgradeIfRequired
+
 	if [ "${installer_interactive}" = "y" ]
 	then
-		${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customizations" --defaultno --yes-button "Yes, proceed" --no-button "No, back to main menu" --yesno --clear -- "Proceed with deploying Shibboleth and related settings?" ${whipSize} 3>&1 1>&2 2>&3
-		continueFwipe=$?
-	else
-		continueFwipe=0
+		askForConfigurationData
+		prepConfirmBox
+		askForSaveConfigToLocalDisk
 	fi
 
-	if [ "${continueFwipe}" -eq 0 ]
-	then
-
-		containerDist="Jetty9"
-
-		# check for installed IDP
-		setVarUpgradeType
-
-		setJavaHome
-
-		# Override per federation
-		performStepsForShibbolethUpgradeIfRequired
-
-		if [ "${installer_interactive}" = "y" ]
-		then
-			askForConfigurationData
-			prepConfirmBox
-			askForSaveConfigToLocalDisk
-		fi
-
-		notifyMessageDeployBeginning
+	notifyMessageDeployBeginning
 
 
-		setVarPrepType
-		setVarCertCN
+	setVarPrepType
+	setVarCertCN
 
-		installDependanciesForInstallation
+	installDependanciesForInstallation
 
-		setJavaCACerts
+	setJavaCACerts
 
-		generatePasswordsForSubsystems
+	generatePasswordsForSubsystems
 
-		patchFirewall
+	patchFirewall
 
-		installJetty
-		# moved from above jetty, to here just after.
+	installJetty
+	# moved from above jetty, to here just after.
 
-		# installEPEL Sept 26 - no longer needed since Maven is installed via zip
+	# installEPEL Sept 26 - no longer needed since Maven is installed via zip
 
-		[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
-
-
-		installCasClientIfEnabled
+	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
 
 
-		installFticksIfEnabled
+	installCasClientIfEnabled
 
 
-		installEPTIDSupport
-
-		configJettyServerXMLForPasswd
-
-		configShibbolethXMLAttributeResolverForLDAP
+	installFticksIfEnabled
 
 
-		runShibbolethInstaller
+	installEPTIDSupport
+
+	configJettyServerXMLForPasswd
+
+	configShibbolethXMLAttributeResolverForLDAP
 
 
-		createCertificatePathAndHome
+	runShibbolethInstaller
 
 
-		# Override per federation
-		installCertificates
-
-		configShibbolethSSLForLDAPJavaKeystore
-
-		# Override per federation
-		configContainerSSLServerKey
-
-		patchShibbolethLDAPLoginConfigs
-
-		patchJettyConfigs
-
-		# Override per federation
-		configShibbolethFederationValidationKey
-
-		patchShibbolethConfigs
-
-		updateMachineTime
-
-		updateJettyAddingIDPWar
-
-		restartJettyService
-
-		enableJettyOnRestart
+	createCertificatePathAndHome
 
 
-	else
+	# Override per federation
+	installCertificates
 
-		${whiptailBin} --backtitle "${GUIbacktitle}" --title "Shibboleth customization aborted" --msgbox "Shibboleth customizations WERE NOT done. Choose OK to return to main menu" ${whipSize}
+	configShibbolethSSLForLDAPJavaKeystore
 
-	fi
+	# Override per federation
+	configContainerSSLServerKey
+
+	patchShibbolethLDAPLoginConfigs
+
+	patchJettyConfigs
+
+	# Override per federation
+	configShibbolethFederationValidationKey
+
+	patchShibbolethConfigs
+
+	updateMachineTime
+
+	updateJettyAddingIDPWar
+
+	restartJettyService
+
+	enableJettyOnRestart
 
 
 }
