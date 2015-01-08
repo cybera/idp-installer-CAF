@@ -227,7 +227,7 @@ echo "Start Up processes completed" >> ${statusFile} 2>&1
 
 
 
-doInstall() {
+doInstallEduroam() {
 	if [ "${installer_interactive}" = "y" ]; then
 		${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy eduroam customizations" --defaultno --yes-button "Yes, proceed" --no-button "No, back to main menu" --yesno --clear -- "Proceed with deploying Canadian Access Federation(CAF) eduroam settings?" ${whipSize} 3>&1 1>&2 2>&3
 		continueFwipe=$?
@@ -253,6 +253,35 @@ doInstall() {
 		fi
 	fi
 }
+
+
+doInstallFedSSO() {
+        if [ "${installer_interactive}" = "y" ]
+        then
+                ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customizations" --defaultno --yes-button "Yes, proceed" --no-button "No, back to main menu" --yesno --clear -- "Proceed with deploying Shibboleth and related settings?" ${whipSize} 3>&1 1>&2 2>&3
+                continueFwipe=$?
+        else
+                continueFwipe=0
+        fi
+
+        if [ "${continueFwipe}" -eq 0 ]; then
+
+                echo "Beginning overlay , creating Restore Point" >> ${statusFile} 2>&1
+
+                createRestorePoint
+                invokeShibbolethInstallProcessJetty9
+
+                if [ "${installer_interactive}" = "y" ]; then
+                        ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Shibboleth customization completed"  --msgbox "Congratulations! Shibboleth customizations are now deployed!\n\n Choose OK to return to main menu." 22 75
+                fi
+        else
+                if [ "${installer_interactive}" = "y" ]; then
+                        ${whiptailBin} --backtitle "${GUIbacktitle}" --title "Shibboleth customization aborted" --msgbox "Shibboleth customizations WERE NOT done. Choose OK to return to main menu" ${whipSize}
+                fi
+        fi
+}
+
+
 
 displayMainMenu() {
 
@@ -312,7 +341,7 @@ displayMainMenu() {
 			invokeEduroamInstallProcess
 			echo "Update Completed" >> ${statusFile} 2>&1
 
-			doInstall
+			doInstallEduroam
 		else
 			echo "Sorry, necessary configuration for eduroam is incomplete, please redo config file"
 			exit
@@ -331,7 +360,7 @@ displayMainMenu() {
 
                                         # FIXME: REDUNDANT? --> softwareInstallMaven
 
-                                        invokeShibbolethInstallProcessJetty9
+                                        doInstallFedSSO
 
                                         createRestorePoint
                                         echo "Restore Point Completed" >> ${statusFile} 2>&1
@@ -352,15 +381,15 @@ displayMainMenu() {
 		echo "Restore Point Completed" >> ${statusFile} 2>&1
 		echo "Installing FreeRADIUS and eduroam configuration" >> ${statusFile} 2>&1
 		invokeEduroamInstallProcess
-		doInstall
+		doInstallEduroam
 		echo "Installing Shibboleth and Federated SSO configuration" >> ${statusFile} 2>&1
 
-		invokeShibbolethInstallProcessJetty9
+		doInstallFedSSO
 
 		echo ""
 		echo "Update Completed" >> ${statusFile} 2>&1
 
-		#doInstall
+		#doInstallEduroam
 	else
 
 		mainMenuExitFlag=1
