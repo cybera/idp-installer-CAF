@@ -157,6 +157,7 @@ guessLinuxDist() {
 
 setDistCommands() {
         if [ ${dist} = "ubuntu" ]; then
+		debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
                 distCmdU=${ubuntuCmdU}
                 distCmdUa=${ubuntuCmdUa}
                 distCmd1=${ubuntuCmd1}
@@ -172,7 +173,8 @@ setDistCommands() {
 		distRadiusGroup=${ubuntuRadiusGroup}
         elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
                 if [ ${dist} = "centos" ]; then
-                        redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
+			redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
+                        #redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
                         distCmdU=${centosCmdU}
                         distCmdUa=${centosCmdUa}
                         distCmd1=${centosCmd1}
