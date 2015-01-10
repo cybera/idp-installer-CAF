@@ -214,7 +214,7 @@ setDistCommands() {
 validateConnectivity()
 
 {
-
+if [ "$1" == "test" ]; then return 0; fi 
 ##############################
 # variables definition
 ##############################
@@ -296,8 +296,8 @@ fi
 ##############################
 elo "${Echo} Port availability checking..."
 
-el "nc -z -w5 ${ldapserver} 636 "
-  if [ $? == "0" ]
+output=$(nc ${ldapserver} 636 < /dev/null 2>&1)
+if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
     then
         elo "${Echo} port 636 - - - - ok"
         PORT636="ok"
@@ -306,8 +306,8 @@ el "nc -z -w5 ${ldapserver} 636 "
         PORT636="failed"
   fi
 
-el "nc -z -w5 ${ldapserver} 389"
-  if [ $? == "0" ]
+output=$(nc ${ldapserver} 389 < /dev/null 2>&1)
+if [ $? -eq 0 ] || echo "${output}" | grep -q "Connection reset by peer"
     then
         elo "${Echo} port 389 - - - - ok"
         PORT389="ok"
@@ -416,7 +416,10 @@ if [ $CERTIFICATE == "failed" -o $LDAP == "failed" ]
         then
                 MESSAGE="[ERROR] Reachability test has been failed. Installation will exit [press Enter key]: "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+            	fi
                 if [ ! -z $choice ]
                 then
                         if [ $choice != "continue" ]
@@ -432,7 +435,10 @@ elif [ $PING == "failed" -o $PING == "warning" -o $PORT389 == "failed" -o $CERTI
         then
                 MESSAGE="[WARNING] Reachability test completed with some uncritical exceptions. Do you want to continue? [Y/n] "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+            	fi
                 if [ ! -z $choice ]
                 then
                         if [ $choice == "Y" -o $choice == "y" -o $choice == "yes" ]
@@ -448,7 +454,10 @@ elif [ $PING == "failed" -o $PING == "warning" -o $PORT389 == "failed" -o $CERTI
         else
                 MESSAGE="[SUCCESS] Reachability test has been completed successfully. [press Enter to continue] "
                 ${Echo} -n $MESSAGE
-                read choice
+                if [ "${installer_interactive}" = "y" ]
+                then
+                	read choice
+                fi
 fi
 
 ${Echo} "Starting installation script..."

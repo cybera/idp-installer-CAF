@@ -114,7 +114,7 @@ then
 	fi
 
 	if echo "${installer_section0_buildComponentList}" | grep -q "shibboleth"; then
-		validateConnectivity
+		validateConnectivity ${installer_section0_version}
 	fi
 
 else

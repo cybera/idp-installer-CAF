@@ -55,6 +55,19 @@ installDependanciesForInstallation ()
 	${Echo} "Done."
 }
 
+patchFirewall()
+{
+        #Replace firewalld with iptables (Centos7)
+        if [ "${dist}" == "centos" -a "${redhatDist}" == "7" ]; then
+                systemctl stop firewalld
+                systemctl mask firewalld
+                eval "yum -y install iptables-services" >> ${statusFile} 2>&1
+                systemctl enable iptables
+                systemctl start iptables
+        fi
+
+}
+
 fetchJavaIfNeeded ()
 
 {
@@ -107,71 +120,68 @@ certCN=`${Echo} ${idpurl} | cut -d/ -f3`
 
 setJavaHome () {
 
-	# force the latest java onto the system to ensure latest is available for all operations.
-	# including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
+        # force the latest java onto the system to ensure latest is available for all operations.
+        # including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
 
-	unset JAVA_HOME
+        # force the latest java onto the system to ensure latest is available for all operations.
+        # including the calculation of JAVA_HOME to be what this script sees on the system, not what a stale environment may have
 
-		${Echo} "Installing Java OpenJDK packages ..."
-		#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
-		eval ${distCmd2} &> >(tee -a ${statusFile})
-		eval ${distCmd3} &> >(tee -a ${statusFile})
-		${Echo} "Done."
-
-	javaBin=`which java`
-	if [ -z "${JAVA_HOME}" ]; then
-		# check java
-		if [ -L "${javaBin}" ]; then
-			# the '/bin' is used to ensure the tail end of the JAVA_HOME string is not terminated in a /
-			# if it is, the rest of the paths used downstream will be .....//jre/bin which mean the paths are not found
-
-			export JAVA_HOME=`readlink -f ${javaBin} | awk -F'bin' '{print $1}'`
-		else
-			if [ -s "${javaBin}" ]; then
-				export JAVA_HOME=`${javaBin} -classpath ${Spath}/files/ getJavaHome`
-			else
-				${Echo} "No java found, please install JRE"
-				cleanBadInstall
-			fi
-		fi		
+	if [ -L "/usr/java/default" -a -d "/usr/java/jre${javaVer}" ]; then
+		${Echo} "Dected Java allready installed."
+                export JAVA_HOME=/usr/java/default/jre	
+		return 0
 	fi
 
-	#insulate against invalid javahome with trailing slash
-	JAVA_HOME="${JAVA_HOME%/}"
-	echo "***javahome is: ${JAVA_HOME}"
+        unset JAVA_HOME
+        eval ${distCmd2} &> >(tee -a ${statusFile})
 
-	# validate java_home and ensure it runs as expected before going any further
-	${JAVA_HOME}/bin/java -version >> ${statusFile} 2>&1
+        #Install from src
+        javaSrc="jre-8u25-linux-x64.tar.gz"
+        if [ ! -s "${downloadPath}/${javaSrc}" ]; then
+                ${fetchCmd} ${downloadPath}/${javaSrc} -j -L -H "Cookie: oraclelicense=accept-securebackup-cookie"  https://download.oracle.com/otn-pub/java/jdk/8u25-b17/${javaSrc} >> ${statusFile} 2>&1
+        fi
+        mkdir /usr/java
+        tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
+        ln -s /usr/java/jre${javaVer}/ /usr/java/latest
+        ln -s /usr/java/latest /usr/java/default
+        export JAVA_HOME="/usr/java/default"
+        #Set the alternatives
+        for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
 
-	retval=$?
-	if [ "${retval}" -ne 0 ]; then
-		${Echo} "\nAn error has occurred in the configuration of the JAVA_HOME variable."
-		${Echo} "Please review the java installation and status.log to see what went wrong."
-		${Echo} "Install is aborted until this is resolved."
-		cleanBadInstall
-		exit
-	else
+        echo "***javahome is: ${JAVA_HOME}"
+        # validate java_home and ensure it runs as expected before going any further
+        ${JAVA_HOME}/bin/java -version >> ${statusFile} 2>&1
 
-		${Echo} "JAVA_HOME version verified as good."
-		jEnvString="export JAVA_HOME=${JAVA_HOME}"
-		
-		 if [ -z "`grep 'JAVA_HOME' /root/.bashrc`" ]; then
-		 	
-		 	 ${Echo} "${jEnvString}" >> /root/.bashrc
-			 ${Echo} "JAVA_HOME added to end of /root/.bashrc"
-		
-		 else
 
-	 	 	 ${Echo} "${jEnvString}" >> /root/.bashrc
-			 ${Echo} "***EXISTING JAVA_HOME DETECTED AND OVERRIDDEN!***"
-			 ${Echo} "A new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n"
-			
-		 fi
+        retval=$?
+        if [ "${retval}" -ne 0 ]; then
+                ${Echo} "\n\n\nAn error has occurred in the configuration of the JAVA_HOME variable."
+                ${Echo} "Please review the java installation and status.log to see what went wrong."
+                ${Echo} "Install is aborted until this is resolved."
+                cleanBadInstall
+                exit
+        else
 
-	fi
+                ${Echo} "\n\n\n JAVA_HOME version verified as good."
+                jEnvString="export JAVA_HOME=${JAVA_HOME}"
 
+                 if [ -z "`grep 'JAVA_HOME' /root/.bashrc`" ]; then
+
+                         ${Echo} "${jEnvString}" >> /root/.bashrc
+                         ${Echo} "\n\n\n JAVA_HOME added to end of /root/.bashrc"
+
+                 else
+
+                         ${Echo} "${jEnvString}" >> /root/.bashrc
+                         ${Echo} "\n\n\n ***EXISTING JAVA_HOME DETECTED AND OVERRIDDEN!***"
+                         ${Echo} "\n A new JAVA_HOME has been appended to end of /root/.bashrc to ensure the latest javahome is used. Hand edit as needed\n\n"
+
+                 fi
+
+        fi
 
 }
+
 
 setJavaCACerts ()
 {
@@ -389,30 +399,7 @@ fetchMysqlCon() {
 installFticksIfEnabled() {
 
 if [ "${fticks}" != "n" ]; then
-
-	${Echo} "Installing ndn-shib-fticks"
-	${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
-		eval ${distCmd2} &> >(tee -a ${statusFile})
-		Cres=$?
-
-		if [ $Cres -gt 0 ]; then
-			${Echo} "Command failed: ${distCmd2}"
-			cleanBadInstall
-		fi
-		if [ ! -s "`which mvn 2>/dev/null`" ]; then
-			installMavenRC
-		fi
-
-		if [ ! -s "`which mvn 2>/dev/null`" ]; then
-			${Echo} "Maven2 not found! Install Maven2 and re-run this script."
-			cleanBadInstall
-		fi
-
-	cd /opt
-	git clone git://github.com/leifj/ndn-shib-fticks.git >> ${statusFile} 2>&1
-	cd ndn-shib-fticks
-	mvn >> ${statusFile} 2>&1
-	cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
+	cp ${downloadPath}/ndn-shib-fticks-0.0.1-SNAPSHOT.jar /opt/shibboleth-identityprovider/lib
 
 else
 	${Echo} "NOT Installing ndn-shib-fticks"
@@ -422,70 +409,91 @@ fi
 
 }
 
+
 installEPTIDSupport ()
-	{
-	if [ "${eptid}" != "n" ]; then
-		${Echo} "Installing EPTID support"
-		if [ "${dist}" == "ubuntu" ]; then
-			test=`dpkg -s mysql-server > /dev/null 2>&1`
-			isInstalled=$?
-		else
-			[ -f /etc/init.d/mysqld ]
-			isInstalled=$?
-		fi
+        {
+        if [ "${eptid}" != "n" ]; then
+                ${Echo} "Installing EPTID support"
 
-		if [ "${isInstalled}" -ne 0 ]; then
-			export DEBIAN_FRONTEND=noninteractive
-			${Echo} "Installing mysql server packages..."
-			#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
-			eval ${distCmd5} &> >(tee -a ${statusFile})
-			${Echo} "Done."
+                if [ "$dist" == "ubuntu" ]; then
+                        test=`dpkg -s mysql-server > /dev/null 2>&1`
+                        isInstalled=$?
 
-			mysqldTest=`pgrep mysqld`
-			if [ -z "${mysqldTest}" ]; then
-				/etc/init.d/mysqld start >> ${statusFile} 2>&1
-			fi
-			# set mysql root password
-			tfile=`mktemp`
-			if [ ! -f "$tfile" ]; then
-				return 1
-			fi
-			cat << EOM > $tfile
+                elif [ "$dist" == "centos" -a "$redhatDist" == "6" ]; then
+                        [ -f /etc/init.d/mysqld ]
+                        isInstalled=$?
+
+                elif [ "$dist" == "centos" -a "$redhatDist" == "7" ]; then
+                        #Add Oracle repos
+                        if [ ! -z "`rpm -q mysql-community-release | grep ' is not installed'`" ]; then
+
+                                ${Echo} "Detected no MySQL, adding repos into /etc/yum.repos.d/ and updating them"
+                                mysqlOracleRepo="rpm -Uvh http://repo.mysql.com/mysql-community-release-el7.rpm"
+                                eval $mysqlOracleRepo >> ${statusFile} 2>&1
+
+                        else
+
+                                ${Echo} "Dected MySQL Repo EXIST on this system."
+                        fi
+                        test=`rpm -q mysql-community-server > /dev/null 2>&1`
+                        isInstalled=$?
+
+                fi
+
+                if [ "${isInstalled}" -ne 0 ]; then
+                        export DEBIAN_FRONTEND=noninteractive
+                        eval ${distCmd5} >> ${statusFile} 2>&1
+
+                        mysqldTest=`pgrep mysqld`
+                        if [ -z "${mysqldTest}" ]; then
+                                if [ ${dist} == "ubuntu" ]; then
+                                        service mysql restart >> ${statusFile} 2>&1
+                                else
+                                        service mysqld restart >> ${statusFile} 2>&1
+                                fi
+                        fi
+                        # set mysql root password
+                        tfile=`mktemp`
+                        if [ ! -f "$tfile" ]; then
+                                return 1
+                        fi
+                        cat << EOM > $tfile
 USE mysql;
 UPDATE user SET password=PASSWORD("${mysqlPass}") WHERE user='root';
 FLUSH PRIVILEGES;
 EOM
 
-			mysql --no-defaults -u root -h localhost <$tfile
-			retval=$?
-			# moved removal of MySQL command file to be in the if-then-else statement set below
+                        mysql --no-defaults -u root -h localhost <$tfile
+                        retval=$?
+                        # moved removal of MySQL command file to be in the if-then-else statement set below
 
-			if [ "${retval}" -ne 0 ]; then
-				${Echo} "\n\n\nAn error has occurred in the configuration of the MySQL installation."
-				${Echo} "Please correct the MySQL installation and make sure a root password is set and it is possible to log in using the 'mysql' command."
-				${Echo} "When MySQL is working, re-run this script."
-				${Echo} "The file being run in MySQL is ${tfile} and has not been deleted, please review and delete as necessary."
-				cleanBadInstall
-			else
-				rm -f $tfile
-			fi
-
-
-			if [ "${dist}" != "ubuntu" ]; then
-				/sbin/chkconfig mysqld on
-			fi
-		fi
-
-		fetchMysqlCon
-		cd /opt
-		tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
-		cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
-
-	fi
+                        if [ "${retval}" -ne 0 ]; then
+                                ${Echo} "\n\n\nAn error has occurred in the configuration of the MySQL installation."
+                                ${Echo} "Please correct the MySQL installation and make sure a root password is set and it is possible to log in using the 'mysql' command."
+                                ${Echo} "When MySQL is working, re-run this script."
+                                ${Echo} "The file being run in MySQL is ${tfile} and has not been deleted, please review and delete as necessary."
+                                cleanBadInstall
+                        else
+                                rm -f $tfile
+                        fi
 
 
+                        if [ "${dist}" != "ubuntu" ]; then
+                                /sbin/chkconfig mysqld on
+                        fi
+                fi
 
-	}
+                fetchMysqlCon
+                cd /opt
+                tar zxf ${downloadPath}/mysql-connector-java-${mysqlConVer}.tar.gz -C /opt >> ${statusFile} 2>&1
+                cp /opt/mysql-connector-java-${mysqlConVer}/mysql-connector-java-${mysqlConVer}-bin.jar /opt/shibboleth-identityprovider/lib/
+
+        fi
+
+
+
+        }
+
 
 installCasClientIfEnabled() {
 
@@ -531,26 +539,6 @@ fi
 
 
 
-}
-
-installTomcat() {
-	isInstalled="4"
-	if [ "${dist}" = "ubuntu" ]; then
-		test=`dpkg -s tomcat6 > /dev/null 2>&1`
-		isInstalled=$?
-	else
-		test=`rpm -q tomcat6 > /dev/null 2>&1`
-		isInstalled=$?
-	fi
-	if [ "${isInstalled}" -ne 0 ]; then
-		${Echo} "Installing Tomcat6 packages..."
-		#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
-		eval ${distCmd4} &> >(tee -a ${statusFile})
-		${Echo} "Done."
-		if [ "${dist}" != "ubuntu" ]; then
-			/sbin/chkconfig tomcat6 on
-		fi
-	fi
 }
 
 fetchAndUnzipShibbolethIdP ()
@@ -807,6 +795,7 @@ askForConfigurationData() {
 #	fi
 #}
 
+
 prepConfirmBox() {
 	cat > ${downloadPath}/confirm.tx << EOM
 Options passed to the installer:
@@ -925,16 +914,6 @@ configShibbolethXMLAttributeResolverForLDAP ()
 
 }
 
-configTomcatServerXMLForPasswd ()
-{
-
-	# 	prepare config from templates
-	cat ${Spath}/xml/${my_ctl_federation}/server.xml.tomcat \
-		| sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#;s#HtTpSJkS#${httpsP12}#;s#TrUsTsToRe#${javaCAcerts}#" \
-		> ${Spath}/xml/${my_ctl_federation}/server.xml
-	files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/server.xml"
-}
-
 runShibbolethInstaller ()
 
 {
@@ -942,7 +921,6 @@ runShibbolethInstaller ()
 	cd /opt/shibboleth-identityprovider
 	${Echo} "Running shiboleth installer"
 	sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
-
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
@@ -1012,27 +990,28 @@ configShibbolethSSLForLDAPJavaKeystore()
 
 }
 
-configTomcatSSLServerKey()
+configContainerSSLServerKey()
 
 {
 
-	#set up ssl store
-	if [ ! -s "${certpath}server.key" ]; then
-		${Echo} "Generating SSL key and certificate request"
-		openssl genrsa -out ${certpath}server.key 2048 2>/dev/null
-		openssl req -new -key ${certpath}server.key -out ${certREQ} -config ${downloadPath}/openssl.cnf -subj "/CN=${certCN}/O=${certOrg}/C=${certC}"
-	fi
-	if [ "${selfsigned}" = "n" ]; then
-		${Echo} "Put the certificate from TCS in the file: ${certpath}server.crt" >> ${messages}
-		${Echo} "Run: openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name tomcat -passout pass:${httpspass}" >> ${messages}
-	else
-		openssl x509 -req -days 365 -in ${certREQ} -signkey ${certpath}server.key -out ${certpath}server.crt
-		if [ ! -d "/opt/shibboleth-idp/credentials/" ]; then
-			mkdir /opt/shibboleth-idp/credentials/
-		fi
-		openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name tomcat -passout pass:${httpspass}
-	fi
+        #set up ssl store
+        if [ ! -s "${certpath}server.key" ]; then
+                ${Echo} "Generating SSL key and certificate request"
+                openssl genrsa -out ${certpath}server.key 2048 2>/dev/null
+                openssl req -new -key ${certpath}server.key -out ${certREQ} -config ${Spath}/files/openssl.cnf -subj "/CN=${certCN}/O=${certOrg}/C=${certC}"
+        fi
+        if [ "${selfsigned}" = "n" ]; then
+                ${Echo} "Put the certificate from TCS in the file: ${certpath}server.crt" >> ${messages}
+                ${Echo} "Run: openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name container -passout pass:${httpspass}" >> ${messages}
+        else
+                openssl x509 -req -days 365 -in ${certREQ} -signkey ${certpath}server.key -out ${certpath}server.crt
+                if [ ! -d "/opt/shibboleth-idp/credentials/" ]; then
+                        mkdir /opt/shibboleth-idp/credentials/
+                fi
+                openssl pkcs12 -export -in ${certpath}server.crt -inkey ${certpath}server.key -out ${httpsP12} -name container -passout pass:${httpspass}
+        fi
 }
+
 
 patchShibbolethLDAPLoginConfigs ()
 
@@ -1051,69 +1030,6 @@ patchShibbolethLDAPLoginConfigs ()
 		files="`${Echo} ${files}` ${Spath}/${prep}/login.conf.diff"
 		patch /opt/shibboleth-idp/conf/login.config -i ${Spath}/${prep}/login.conf.diff >> ${statusFile} 2>&1
 	fi
-
-}
-
-patchTomcatConfigs ()
-
-{
-
-	if [ -d "/usr/share/tomcat6/endorsed" ]; then
-		rm -rf /usr/share/tomcat6/endorsed
-		sed -e '/endorsed/ s/^#*/#/' -i ${tomcatSettingsFile}
-	fi
-
-	echo "JAVA_OPTS=\"-Xms512m -Xmx512m -XX:MaxPermSize=128m\"" >> ${tomcatSettingsFile}
-
-	if [ "${dist}" == "ubuntu" ]; then
-		if [ "${AUTHBIND}" != "yes" ]; then
-			${Echo} "AUTHBIND=yes" >> ${tomcatSettingsFile}
-		else
-			${Echo} "AUTHBIND for tomcat already configured" >> ${messages}
-		fi
-		tomcatSSLport="443"
-	else
-		if [ -z "`grep '7443' /etc/sysconfig/iptables`" ]; then
-			iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
-			iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
-			iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
-			iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
-			iptables-save > /etc/sysconfig/iptables
-		fi
-		service iptables reload
-		tomcatSSLport="7443"
-	fi
-
-	if [ ! -s "/usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar" ]; then
-		${fetchCmd} /usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar ${tomcatDepend}
-
-		if [ ! -s "/usr/share/tomcat6/lib/tomcat6-dta-ssl-1.0.0.jar" ]; then
-			${Echo} "Can not get tomcat dependancy, aborting install."
-			cleanBadInstall
-		fi
-	fi
-
-	cp /etc/tomcat6/server.xml /etc/tomcat6/server.xml.${ts}
-	cat ${Spath}/xml/${my_ctl_federation}/server.xml | sed "s/tomcatSSLport/${tomcatSSLport}/" > /etc/tomcat6/server.xml
-	chmod o-rwx /etc/tomcat6/server.xml
-
-	tcatUser=`grep "^tomcat" /etc/passwd | cut -d: -f1`
-	chown ${tcatUser} /etc/tomcat6/server.xml
-	chown ${tcatUser} /opt/shibboleth-idp/metadata
-	chown -R ${tcatUser} /opt/shibboleth-idp/logs/
-
-	# need to set bash as the shell for the user to permit tomcat to restart after reboot
-	chsh -s /bin/bash ${tcatUser}
-
-
-	if [ -d "/var/lib/tomcat6/webapps/ROOT" ]; then
-		mv /var/lib/tomcat6/webapps/ROOT /opt/disabled.tomcat6.webapps.ROOT
-	fi
-	if [ "${dist}" = "ubuntu" ]; then
-		cp /usr/share/tomcat6/lib/servlet-api.jar /opt/shibboleth-idp/lib/
-	fi
-
-
 
 }
 
@@ -1213,25 +1129,6 @@ updateMachineTime ()
 		fi
 		${Echo} "${CRONTAB}*/5 *  *   *   *     /usr/sbin/ntpdate ${ntpserver} > /dev/null 2>&1" | crontab
 	fi
-}
-
-updateTomcatAddingIDPWar ()
-{
-	# 	add idp.war to tomcat
-	if [ "${dist}" = "ubuntu" ]; then
-		cp ${Spath}/xml/${my_ctl_federation}/tomcat.idp.xml /var/lib/tomcat6/conf/Catalina/localhost/idp.xml
-	else
-		cp ${Spath}/xml/${my_ctl_federation}/tomcat.idp.xml /etc/tomcat6/Catalina/localhost/idp.xml
-		# make sure tomcat can see the file
-		chown tomcat /etc/tomcat6/Catalina/localhost/idp.xml
-
-	fi
-}
-
-restartTomcatService ()
-
-{
-	service tomcat6 restart
 }
 
 
@@ -1336,7 +1233,7 @@ ${Echo} "Previous installation found, performing upgrade."
 	if [ ! -f "${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip" ]; then
 		fetchAndUnzipShibbolethIdP
 	fi
-	#unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
+	unzip -q ${downloadPath}/shibboleth-identityprovider-${shibVer}-bin.zip -d /opt
 	chmod -R 755 /opt/shibboleth-identityprovider-${shibVer}
 
         cp /opt/shibboleth-idp/metadata/idp-metadata.xml /opt/shibboleth-identityprovider/src/main/webapp/metadata.xml
@@ -1349,18 +1246,8 @@ ${Echo} "Previous installation found, performing upgrade."
 		installCasClientIfEnabled
 	fi
 
-	if [ -d "/opt/ndn-shib-fticks" ]; then
-		if [ -z "`ls /opt/ndn-shib-fticks/target/*.jar`" ]; then
-			cd /opt/ndn-shib-fticks
-			mvn >> ${statusFile} 2>&1
-		fi
-		cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
-	else
-		fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
-
-		if [ "${fticks}" != "n" ]; then
-			installFticksIfEnabled
-		fi
+	if [ "${fticks}" != "n" ]; then
+		installFticksIfEnabled
 	fi
 
 	if [ -d "/opt/mysql-connector-java-${mysqlConVer}/" ]; then
@@ -1378,129 +1265,317 @@ fi
 }
 
 
-enableTomcatOnRestart ()
+installJetty() {
+
+#Install specific version
+#jetty9URL="http://eclipse.org/downloads/download.php?file=/jetty/9.2.4.v20141103/dist/jetty-distribution-9.2.4.v20141103.tar.gz&r=1"
+#jetty9File="${jetty9URL##*/}"
+#jetty9Path=`basename ${jetty9File}  .tar.gz`
+
+#Download latest stable
+jetty9File=`curl -s http://download.eclipse.org/jetty/stable-9/dist/ | grep -oP "(?>)jetty-distribution.*tar.gz(?=&)"`
+jetty9Path=`basename ${jetty9File}  .tar.gz`
+jetty9URL="http://download.eclipse.org/jetty/stable-9/dist/${jetty9File}"
+
+        if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]
+        then
+                echo "Jetty detected as installed"
+        else
+                if [ ! -s "${downloadPath}/${jetty9File}" ]; then
+                        echo "Fetching Jetty from ${jetty9URL}"
+                        ${fetchCmd} ${downloadPath}/${jetty9File} "{$jetty9URL}"
+                fi
+                cd /opt
+                tar zxf ${downloadPath}/${jetty9File} >> ${statusFile} 2>&1
+                mkdir -p "/opt/${jetty9Path}/base/tmp"
+                for i in etc lib resources webapps logs start.ini; do cp -r /opt/${jetty9Path}/$i /opt/${jetty9Path}/base/; done
+                ln -s /opt/${jetty9Path} /opt/jetty
+                sed -i 's/\# JETTY_HOME/JETTY_HOME=\/opt\/jetty/g' /opt/jetty/bin/jetty.sh
+                sed -i 's/\# JETTY_USER/JETTY_USER=jetty/g' /opt/jetty/bin/jetty.sh
+                sed -i 's/\# JETTY_BASE/JETTY_BASE=\/opt\/jetty\/base/g' /opt/jetty/bin/jetty.sh
+                sed -i 's/TMPDIR:-\/tmp/TMPDIR:-\/opt\/jetty\/base\/tmp/g' /opt/jetty/bin/jetty.sh
+                cat ${Spath}/files/jetty.sh > /opt/jetty/bin/jetty.sh
+                useradd jetty
+                chown jetty:jetty /opt/jetty/ -R
+                ln -s /opt/jetty/bin/jetty.sh /etc/init.d/jetty
+
+         fi
+}
+
+
+patchJettyConfigs ()
+
 {
+        jettyBase="/opt/jetty/base"
+        if [ -d "/opt/shibboleth-identityprovider/endorsed" ]; then
+                if [ ! -d "${jettyBase}/lib/ext/endorsed" ]; then
+                        mkdir ${jettyBase}/lib/ext/endorsed
+                fi
+                for i in `ls /opt/shibboleth-identityprovider/endorsed/`; do
+                        if [ ! -s "${jettyBase}/lib/ext/endorsed/${i}" ]; then
+                                cp /opt/shibboleth-identityprovider/endorsed/${i} ${jettyBase}/lib/ext/endorsed
+                        fi
+                done
+        fi
 
-# ensure proper start/stop at run level 3 for the machine are in place for tomcat and related services
-	if [ "${dist}" != "ubuntu" ]; then
-		ckCmd="/sbin/chkconfig"
-		ckArgs="--level 3"
-		ckState="on" 
-		ckServices="tomcat6"
+        if [ -z "`grep '7443' /etc/sysconfig/iptables`" ]; then
+                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
+                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 7443 -j ACCEPT
+                iptables -I INPUT -p tcp -m state --state NEW -m tcp --dport 8443 -j ACCEPT
+                iptables -t nat -A PREROUTING -p tcp --dport 443 -j REDIRECT --to-port 7443
+                iptables-save > /etc/sysconfig/iptables
+        fi
+        service iptables restart
+        jettySSLport="7443"
 
-		for myService in $ckServices
-		do
-			${ckCmd} ${ckArgs} ${myService} ${ckState}
-		done
-	fi
+        if [ ! -s "${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar" ]; then
+                ${fetchCmd} ${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar ${jettyDepend}
+
+                if [ ! -s "${jettyBase}/lib/ext/jetty9-dta-ssl-1.0.0.jar" ]; then
+                        ${Echo} "Can not get jetty dependancy, aborting install."
+                        cleanBadInstall
+                fi
+        fi
+
+        cat ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml | sed "s/jettySSLport/${jettySSLport}/" > $jettyBase/etc/jetty-shibboleth.xml
+        echo "etc/jetty-shibboleth.xml" >> $jettyBase/start.ini
+
+        jettyUser=`grep "^jetty" /etc/passwd | cut -d: -f1`
+        chown ${jettyUser} ${jettyBase}/etc/jetty-shibboleth.xml
+        chown ${jettyUser} /opt/shibboleth-idp/metadata
+        chown -R ${jettyUser} /opt/shibboleth-idp/logs/
+
+        # need to set bash as the shell for the user to permit jetty to restart after reboot
+        chsh -s /bin/bash ${jettyUser}
 
 }
 
-invokeShibbolethInstallProcess ()
+updateJettyAddingIDPWar ()
+{
+        #       add idp.war to jetty
+        cp ${Spath}/xml/${my_ctl_federation}/jetty.idp.xml ${jettyBase}/webapps/idp.xml
+        chown jetty ${jettyBase}/webapps/idp.xml
+}
+
+configJettyServerXMLForPasswd ()
 {
 
-	### Begin of SAML IdP installation Process
+        #       prepare config from templates
+        echo ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml >> log
+        cat ${Spath}/xml/${my_ctl_federation}/server.xml.jetty \
+                | sed -re "s#ShIbBKeyPaSs#${pass}#;s#HtTpSkEyPaSs#${httpspass}#;s#HtTpSJkS#${httpsP12}#;s#TrUsTsToRe#${javaCAcerts}#" \
+                > ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml
+        files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/jetty-shibboleth.xml"
+}
+
+
+restartJettyService ()
+
+{
+        if [ -f /var/run/jetty.pid ]; then
+                service jetty stop
+        fi
+        service jetty start
+}
+
+
+patchShibbolethConfigs ()
+{
+
+# patch shibboleth config files
+        ${Echo} "Patching config files"
+        mv /opt/shibboleth-idp/conf/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml.dist
+        cp ${Spath}/files/${my_ctl_federation}/attribute-filter.xml /opt/shibboleth-idp/conf/attribute-filter.xml
+        patch /opt/shibboleth-idp/conf/handler.xml -i ${Spath}/${prep}/handler.xml.diff >> ${statusFile} 2>&1
+        patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/relying-party.xml.diff >> ${statusFile} 2>&1
+#       patch /opt/shibboleth-idp/conf/attribute-resolver.xml -i ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml.diff >> ${statusFile} 2>&1
+        cp ${Spath}/xml/${my_ctl_federation}/attribute-resolver.xml /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+
+        if [ "${google}" != "n" ]; then
+                repStr='<!-- PLACEHOLDER DO NOT REMOVE -->'
+                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/google-filter.add" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+                cat ${Spath}/xml/${my_ctl_federation}/google-relay.diff.template | sed -re "s/IdPfQdN/${certCN}/" > ${Spath}/xml/${my_ctl_federation}/google-relay.diff
+                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/google-relay.diff"
+                patch /opt/shibboleth-idp/conf/relying-party.xml -i ${Spath}/xml/${my_ctl_federation}/google-relay.diff >> ${statusFile} 2>&1
+                cat ${Spath}/xml/${my_ctl_federation}/google.xml | sed -re "s/GoOgLeDoMaIn/${googleDom}/" > /opt/shibboleth-idp/metadata/google.xml
+        fi
+
+        if [ "${fticks}" != "n" ]; then
+                cp ${Spath}/xml/${my_ctl_federation}/fticks_logging.xml /opt/shibboleth-idp/conf/logging.xml
+                touch /opt/shibboleth-idp/conf/fticks-key.txt
+                chown ${jettyUser} /opt/shibboleth-idp/conf/fticks-key.txt
+        fi
+
+        if [ "${eptid}" != "n" ]; then
+                epass=`${passGenCmd}`
+#               grant sql access for shibboleth
+                esalt=`openssl rand -base64 36 2>/dev/null`
+                cat ${Spath}/xml/${my_ctl_federation}/eptid.sql.template | sed -re "s#SqLpAsSwOrD#${epass}#" > ${Spath}/xml/${my_ctl_federation}/eptid.sql
+                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.sql"
+
+                ${Echo} "Create MySQL database and shibboleth user."
+                mysql -uroot -p"${mysqlPass}" < ${Spath}/xml/${my_ctl_federation}/eptid.sql
+                retval=$?
+                if [ "${retval}" -ne 0 ]; then
+                        ${Echo} "Failed to create EPTID database, take a look in the file '${Spath}/xml/${my_ctl_federation}/eptid.sql.template' and corect the issue." >> ${messages}
+                        ${Echo} "Password for the database user can be found in: /opt/shibboleth-idp/conf/attribute-resolver.xml" >> ${messages}
+                fi
+
+                cat ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon.template \
+                        | sed -re "s#SqLpAsSwOrD#${epass}#;s#Large_Random_Salt_Value#${esalt}#" \
+                        > ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon
+                files="`${Echo} ${files}` ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon"
+
+                repStr='<!-- EPTID RESOLVER PLACEHOLDER -->'
+                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.resolver" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+                repStr='<!-- EPTID ATTRIBUTE CONNECTOR PLACEHOLDER -->'
+                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.attrCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+                repStr='<!-- EPTID PRINCIPAL CONNECTOR PLACEHOLDER -->'
+                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.princCon" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-resolver.xml
+
+                repStr='<!-- EPTID FILTER PLACEHOLDER -->'
+                sed -i -e "/^${repStr}$/r ${Spath}/xml/${my_ctl_federation}/eptid.add.filter" -e "/^${repStr}$/d" /opt/shibboleth-idp/conf/attribute-filter.xml
+        fi
+
+
+}
+
+
+enableJettyOnRestart ()
+{
+
+# ensure proper start/stop at run level 3 for the machine are in place for Jetty and related services
+        if [ "${dist}" != "ubuntu" ]; then
+                ckCmd="/sbin/chkconfig"
+                ckArgs="--level 3"
+                ckState="on"
+                ckServices="jetty"
+
+                for myService in $ckServices
+                do
+                        ${ckCmd} ${ckArgs} ${myService} ${ckState}
+                done
+        fi
+
+}
+
+
+invokeShibbolethInstallProcessJetty9 ()
+{
+
+        ### Begin of SAML IdP installation Process
+
+	containerDist="Jetty9"
+
+	# check for installed IDP
+	setVarUpgradeType
+
+	setJavaHome
+
+	# Override per federation
+	performStepsForShibbolethUpgradeIfRequired
 
 	if [ "${installer_interactive}" = "y" ]
 	then
-		${whiptailBin} --backtitle "${GUIbacktitle}" --title "Deploy Shibboleth customizations" --defaultno --yes-button "Yes, proceed" --no-button "No, back to main menu" --yesno --clear -- "Proceed with deploying Shibboleth and related settings?" ${whipSize} 3>&1 1>&2 2>&3
-		continueFwipe=$?
-	else
-		continueFwipe=0
+		askForConfigurationData
+		prepConfirmBox
+		askForSaveConfigToLocalDisk
 	fi
 
-	if [ "${continueFwipe}" -eq 0 ]
-	then
-
-		# check for installed IDP
-		setVarUpgradeType
-
-		# Override per federation
-		performStepsForShibbolethUpgradeIfRequired
-
-		if [ "${installer_interactive}" = "y" ]
-		then
-			askForConfigurationData
-			prepConfirmBox
-			askForSaveConfigToLocalDisk
-		fi
-
-		notifyMessageDeployBeginning
+	notifyMessageDeployBeginning
 
 
-		setVarPrepType
-		setVarCertCN
+	setVarPrepType
+	setVarCertCN
 
-		installDependanciesForInstallation
+	installDependanciesForInstallation
 
-		fetchJavaIfNeeded
+	setJavaCACerts
 
-		setJavaHome
+	generatePasswordsForSubsystems
 
-		setJavaCACerts
+	patchFirewall
 
-		generatePasswordsForSubsystems
+	installJetty
+	# moved from above jetty, to here just after.
 
-		installTomcat
+	# installEPEL Sept 26 - no longer needed since Maven is installed via zip
 
-		# moved from above tomcat, to here just after.
-
-		# installEPEL Sept 26 - no longer needed since Maven is installed via zip
-
-		[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
+	[[ "${upgrade}" -ne 1 ]] && fetchAndUnzipShibbolethIdP
 
 
-		installCasClientIfEnabled
+	installCasClientIfEnabled
 
 
-		installFticksIfEnabled
+	installFticksIfEnabled
 
 
-		installEPTIDSupport
+	installEPTIDSupport
+
+	configJettyServerXMLForPasswd
+
+	configShibbolethXMLAttributeResolverForLDAP
 
 
-		configTomcatServerXMLForPasswd
-
-		configShibbolethXMLAttributeResolverForLDAP
+	runShibbolethInstaller
 
 
-		runShibbolethInstaller
+	createCertificatePathAndHome
 
 
-		createCertificatePathAndHome
+	# Override per federation
+	installCertificates
 
+	configShibbolethSSLForLDAPJavaKeystore
 
-		# Override per federation
-		installCertificates
+	# Override per federation
+	configContainerSSLServerKey
 
-		configShibbolethSSLForLDAPJavaKeystore
+	patchShibbolethLDAPLoginConfigs
 
-		# Override per federation
-		configTomcatSSLServerKey
+	patchJettyConfigs
 
-		patchShibbolethLDAPLoginConfigs
+	# Override per federation
+	configShibbolethFederationValidationKey
 
-		patchTomcatConfigs
+	patchShibbolethConfigs
 
-		# Override per federation
-		configShibbolethFederationValidationKey
+	updateMachineTime
 
-		patchShibbolethConfigs
+	updateJettyAddingIDPWar
 
-		updateMachineTime
+	restartJettyService
 
-		updateTomcatAddingIDPWar
-
-
-		restartTomcatService
-
-		enableTomcatOnRestart
-
-	else
-
-		${whiptailBin} --backtitle "${GUIbacktitle}" --title "Shibboleth customization aborted" --msgbox "Shibboleth customizations WERE NOT done. Choose OK to return to main menu" ${whipSize} 
-
-	fi
+	enableJettyOnRestart
 
 
 }
+
+
+invokeShibbolethUpgradeProcess()
+{
+        if [ -a "/opt/${jetty9Path}/bin/jetty.sh" ]; then
+                echo "Jetty detected as installed"
+        else
+                if [ ${dist} == "ubuntu" ]; then
+                        apt-get -y remove --purge tomcat6 openjdk* default-jre java*
+                else
+                        yum -y remove tomcat* java*
+                fi
+                cleanBadInstall "NotExit"
+                fticks="y"
+                eptid="n"
+                invokeShibbolethInstallProcessJetty9
+        fi
+}
+
+invokeShibbolethInstallProcess () ##Default
+{
+
+        invokeShibbolethInstallProcessJetty9
+
+}
+

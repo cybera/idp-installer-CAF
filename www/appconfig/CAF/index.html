@@ -698,12 +698,12 @@ installer_section3_title:
                   Servlet Container
 
 <img id="appservToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
-          rel="tooltip" title="Tomcat is installed by default on a non privileged port (7443) and uses IPTables to port-forward requests from 443 to this servlet container.  
+          rel="tooltip" title="Jetty is installed by default on a non privileged port (7443) and uses IPTables to port-forward requests from 443 to this servlet container.  
         &#10;&#10;
-          The self signed certificate for this host is installed into the Java Key Store (JKS) and you will be asked to set an password for this keystore during the installation process. If you do not choose one during install, a random one will be generated to be used in the startup of tomcat which is installed in /opt/tomcat."
+          The self signed certificate for this host is installed into the Java Key Store (JKS) and you will be asked to set an password for this keystore during the installation process. If you do not choose one during install, a random one will be generated to be used in the startup of Jetty which is installed in /opt/jetty."
            />
                   :
-                  <input id="appserv" type="text" placeholder="tomcat" value="tomcat" readonly onchange="updateCtx(this)" >
+                  <input id="appserv" type="text" placeholder="jetty" value="jetty" readonly onchange="updateCtx(this)" >
                   <BR>
                   Authentication type 
 <img id="typeToolTip" src="../img/icon_tooltip.gif" alt="ToolTip" 
