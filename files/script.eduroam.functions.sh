@@ -16,7 +16,7 @@ else
 	installStateFSSO=0
 fi
 
-if [ -L "/etc/raddb/sites-enabled/eduroam-inner-tunnel" -a -d "/etc/raddb" ]
+if [ -L "${distEduroamPath}/sites-enabled/eduroam-inner-tunnel" -a -d "${distEduroamPath}" ]
 then
         msg_freeradius_stat="Installed"
 	installStateEduroam=1
@@ -35,7 +35,7 @@ refresh() {
                 	continueFwipe=$?
                 	if [ "${continueFwipe}" -eq 0 ]
                 	then
-				eval ${redhatCmdEduroam} &> >(tee -a ${statusFile})	
+				eval ${distCmdEduroam} &> >(tee -a ${statusFile})	
 				echo ""
 				echo "Update Completed" >> ${statusFile} 2>&1 
                 	fi
@@ -75,20 +75,20 @@ deployEduroamCustomizations() {
 	
 	cp ${templatePath}/etc/nsswitch.conf.template /etc/nsswitch.conf
 
-	cp ${templatePath}/etc/raddb/sites-available/default.template /etc/raddb/sites-available/default
-	cp ${templatePath}/etc/raddb/sites-available/eduroam.template /etc/raddb/sites-available/eduroam
-	cp ${templatePath}/etc/raddb/sites-available/eduroam-inner-tunnel.template /etc/raddb/sites-available/eduroam-inner-tunnel
-	cp ${templatePath}/etc/raddb/eap.conf.template /etc/raddb/eap.conf
-	chgrp radiusd /etc/raddb/sites-available/*
+	cp ${templatePath}${distEduroamPath}/sites-available/default.template ${distEduroamPath}/sites-available/default
+	cp ${templatePath}${distEduroamPath}/sites-available/eduroam.template ${distEduroamPath}/sites-available/eduroam
+	cp ${templatePath}${distEduroamPath}/sites-available/eduroam-inner-tunnel.template ${distEduroamPath}/sites-available/eduroam-inner-tunnel
+	cp ${templatePath}${distEduroamPath}/eap.conf.template ${distEduroamPath}/eap.conf
+	chgrp ${distRadiusGroup} ${distEduroamPath}/sites-available/*
 	
 	# remove and redo symlink for freeRADIUS sites-available to sites-enabled
 
-(cd /etc/raddb/sites-enabled;rm -f eduroam-inner-tunnel; ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel)
-(cd /etc/raddb/sites-enabled;rm -f eduroam; ln -s ../sites-available/eduroam)
-	#rm -f /etc/raddb/sites-available/eduroam-inner-tunnel
-	#ln -s /etc/raddb/sites-available/eduroam-inner-tunnel /etc/raddb/sites-enabled/eduroam-inner-tunnel
-	#rm -f /etc/raddb/sites-available/eduroam
-	#ln -s /etc/raddb/sites-available/eduroam /etc/raddb/sites-enabled/eduroam
+(cd ${distEduroamPath}/sites-enabled;rm -f eduroam-inner-tunnel; ln -s ../sites-available/eduroam-inner-tunnel eduroam-inner-tunnel)
+(cd ${distEduroamPath}/sites-enabled;rm -f eduroam; ln -s ../sites-available/eduroam)
+	#rm -f ${distEduroamPath}/sites-available/eduroam-inner-tunnel
+	#ln -s ${distEduroamPath}/sites-available/eduroam-inner-tunnel ${distEduroamPath}/sites-enabled/eduroam-inner-tunnel
+	#rm -f ${distEduroamPath}/sites-available/eduroam
+	#ln -s ${distEduroamPath}/sites-available/eduroam ${distEduroamPath}/sites-enabled/eduroam
 
 	# do parsing of templates into the right spot
 	# in order as they appear in the variable list
@@ -108,78 +108,81 @@ deployEduroamCustomizations() {
 	|perl -npe "s#sMb_ReAlM#${smb_realm}#" \
 	> /etc/samba/smb.conf
 
-# /etc/raddb/modules
-        ln -s /etc/raddb/mods-enabled /etc/raddb/modules
-	cat ${templatePath}/etc/raddb/modules/mschap.template \
+# ${distEduroamPath}/modules
+        ln -s ${distEduroamPath}/mods-enabled ${distEduroamPath}/modules
+	cat ${templatePath}${distEduroamPath}/modules/mschap.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PXYCFG_rEaLm#${freeRADIUS_pxycfg_realm}#" \
-	 > /etc/raddb/modules/mschap
-	chgrp radiusd /etc/raddb/modules/mschap
+	 > ${distEduroamPath}/modules/mschap
+	chgrp ${distRadiusGroup} ${distEduroamPath}/modules/mschap
 
-# /etc/raddb/radiusd.conf
-	cat ${templatePath}/etc/raddb/radiusd.conf.template \
+# ${distEduroamPath}/radiusd.conf
+	cat ${templatePath}${distEduroamPath}/radiusd.conf.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
-	> /etc/raddb/radiusd.conf
-	chgrp radiusd /etc/raddb/radiusd.conf
+	> ${distEduroamPath}/radiusd.conf
+	chgrp ${distRadiusGroup} ${distEduroamPath}/radiusd.conf
 
-# /etc/raddb/proxy.conf
-	cat ${templatePath}/etc/raddb/proxy.conf.template \
+# ${distEduroamPath}/proxy.conf
+	cat ${templatePath}${distEduroamPath}/proxy.conf.template \
 	|perl -npe "s#fReErAdIuS_rEaLm#${freeRADIUS_realm}#" \
 	|perl -npe "s#PrOd_EduRoAm_PhRaSe#${freeRADIUS_cdn_prod_passphrase}#" \
-	> /etc/raddb/proxy.conf
-	chgrp radiusd /etc/raddb/proxy.conf
+	> ${distEduroamPath}/proxy.conf
+	chgrp ${distRadiusGroup} ${distEduroamPath}/proxy.conf
 
-# /etc/raddb/clients.conf 
-	cat ${templatePath}/etc/raddb/clients.conf.template \
+# ${distEduroamPath}/clients.conf 
+	cat ${templatePath}${distEduroamPath}/clients.conf.template \
 	|perl -npe "s#PrOd_EduRoAm_PhRaSe#${freeRADIUS_cdn_prod_passphrase}#" \
 	|perl -npe "s#CLCFG_YaP1_iP#${freeRADIUS_clcfg_ap1_ip}#" \
 	|perl -npe "s#CLCFG_YaP1_sEcReT#${freeRADIUS_clcfg_ap1_secret}#" \
 	|perl -npe "s#CLCFG_YaP2_iP#${freeRADIUS_clcfg_ap2_ip}#" \
 	|perl -npe "s#CLCFG_YaP2_sEcReT#${freeRADIUS_clcfg_ap2_secret}#" \
- 	> /etc/raddb/clients.conf
-	chgrp radiusd /etc/raddb/clients.conf
+ 	> ${distEduroamPath}/clients.conf
+	chgrp ${distRadiusGroup} ${distEduroamPath}/clients.conf
 
-# /etc/raddb/certs/ca.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	cat ${templatePath}/etc/raddb/certs/ca.cnf.template \
+# ${distEduroamPath}/certs/ca.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
+	cat ${templatePath}${distEduroamPath}/certs/ca.cnf.template \
 	|perl -npe "s#CRT_Ca_StAtE#${freeRADIUS_ca_state}#" \
 	|perl -npe "s#CRT_Ca_LoCaL#${freeRADIUS_ca_local}#" \
 	|perl -npe "s#CRT_Ca_OrGnAmE#${freeRADIUS_ca_org_name}#" \
 	|perl -npe "s#CRT_Ca_EmAiL#${freeRADIUS_ca_email}#" \
 	|perl -npe "s#CRT_Ca_CoMmOnNaMe#${freeRADIUS_ca_commonName}#" \
- 	> /etc/raddb/certs/ca.cnf
+ 	> ${distEduroamPath}/certs/ca.cnf
 	
-# /etc/raddb/certs/server.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	cat ${templatePath}/etc/raddb/certs/server.cnf.template \
+# ${distEduroamPath}/certs/server.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
+	cat ${templatePath}${distEduroamPath}/certs/server.cnf.template \
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
 	|perl -npe "s#CRT_SvR_EmAiL#${freeRADIUS_svr_email}#" \
 	|perl -npe "s#CRT_SvR_CoMmOnNaMe#${freeRADIUS_svr_commonName}#" \
- 	> /etc/raddb/certs/server.cnf
+ 	> ${distEduroamPath}/certs/server.cnf
 
-# /etc/raddb/certs/client.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
-	cat ${templatePath}/etc/raddb/certs/client.cnf.template \
+# ${distEduroamPath}/certs/client.cnf (note that there are a few things in the template too like setting it to 10yrs validity )
+	cat ${templatePath}${distEduroamPath}/certs/client.cnf.template \
 	|perl -npe "s#CRT_SvR_StAtE#${freeRADIUS_svr_state}#" \
 	|perl -npe "s#CRT_SvR_LoCaL#${freeRADIUS_svr_local}#" \
 	|perl -npe "s#CRT_SvR_OrGnAmE#${freeRADIUS_svr_org_name}#" \
 	|perl -npe "s#CRT_SvR_EmAiL#${freeRADIUS_svr_email}#" \
 	|perl -npe "s#CRT_SvR_CoMmOnNaMe#${freeRADIUS_svr_commonName}#" \
- 	> /etc/raddb/certs/client.cnf
+ 	> ${distEduroamPath}/certs/client.cnf
 
 	echo "Merging variables completed " >> ${statusFile} 2>&1 
 
 # construct default certificates including a CSR for this host in case a commercial CA is used
 
-#	WARNING, see the /etc/raddb/certs/README to 'clean' out certificate bits when you run
+#	WARNING, see the ${distEduroamPath}/certs/README to 'clean' out certificate bits when you run
 #		this script respect the protections freeRADIUS put in place to not overwrite certs
-
-	if [  -e "/etc/raddb/certs/server.crt" ] 
+if [ "${dist}" != "ubuntu" ]; then
+	if [  -e "${distEduroamPath}/certs/server.crt" ] 
 	then
 		echo "bootstrap already run, skipping"
 	else
 	
-		(cd /etc/raddb/certs; ./bootstrap )
+		(cd ${distEduroamPath}/certs; ./bootstrap )
 	fi
+else
+	dd if=/dev/urandom of=${distEduroamPath}/certs/random count=10
+fi
 
 # ensure proper start/stop at run level 3 for the machine are in place for winbind,smb, and of course, radiusd
 	if [ "${dist}" != "ubuntu" ]; then
@@ -195,19 +198,28 @@ deployEduroamCustomizations() {
 	fi
 
 # disable SELinux as it interferes with the winbind process.
+	if [ "${dist}" != "ubuntu" ]; then
 
 	echo "updating SELinux to disable it" >> ${statusFile} 2>&1 
 	cp ${templatePath}/etc/sysconfig/selinux.template /etc/sysconfig/selinux 
 
-# add radiusd to group wbpriv 
+	fi
+# add radiusd/freerad to group wbpriv/winbindd_priv 
+if [ "${dist}" != "ubuntu" ]; then
 	echo "adding user radiusd to WINBIND/SAMBA privilege group wbpriv" >> ${statusFile} 2>&1 
 	usermod -a -G wbpriv radiusd
-
+else
+	echo "adding user freerad to WINBIND/SAMBA privilege group winbindd_priv" >> ${statusFile} 2>&1
+	usermod -a -G winbindd_priv freerad
+fi
 
 # tweak winbind to permit proper authentication traffic to proceed
 # without this, the NTLM call out for freeRADIUS will not be able to process requests
+if [ "${dist}" != "ubuntu" ]; then
 	chmod ugo+rx /var/run/winbindd
-				
+else
+    	chown root:winbindd_priv /var/lib/samba/winbindd_privileged/				
+fi
 
 # disable iptables on runlevels 3,4,5 for reboot and then disable it right now for good measure
 
@@ -216,9 +228,9 @@ deployEduroamCustomizations() {
 #	${ckCmd} --level 4 iptables off
 #	${ckCmd} --level 5 iptables off
 #	/sbin/service iptables stop
-
-modifyIPTABLESForEduroam
-
+if [ "${dist}" != "ubuntu" ]; then
+	modifyIPTABLESForEduroam
+fi
 
 echo "Start Up processes completed" >> ${statusFile} 2>&1 
 
@@ -235,8 +247,9 @@ doInstallEduroam() {
 		continueFwipe=0
 	fi
 
-	if [ "${continueFwipe}" -eq 0 ]; then
-		eval ${redhatCmdEduroam} &> >(tee -a ${statusFile})	
+	if [ "${continueFwipe}" -eq 0 ]; 
+	then
+		eval ${distCmdEduroam} &> >(tee -a ${statusFile})
 		echo ""
 		echo "Update Completed" >> ${statusFile} 2>&1 
 		echo "Beginning overlay , creating Restore Point" >> ${statusFile} 2>&1
@@ -245,7 +258,7 @@ doInstallEduroam() {
 		deployEduroamCustomizations
 
 		if [ "${installer_interactive}" = "y" ]; then
-			${whiptailBin} --backtitle "${GUIbacktitle}" --title "eduroam customization completed"  --msgbox "Congratulations! eduroam customizations are now deployed!\n\nNext steps: Join this machine to the AD domain by typing \n\nnet join -U Administrator\n\n After, reboot the machine and it should be ready to answer requests. \n\nDecide on your commercial certificate: Self Signed certificates were generated by default. A CSR is located at /etc/raddb/certs/server.csr to request a commercial one. Remember the RADIUS extensions needed though!\n\nFor further configuration details, please see the documentation on disk or the web \n\n Choose OK to return to main menu." 22 75
+			${whiptailBin} --backtitle "${GUIbacktitle}" --title "eduroam customization completed"  --msgbox "Congratulations! eduroam customizations are now deployed!\n\nNext steps: Join this machine to the AD domain by typing \n\nnet join -U Administrator\n\n After, reboot the machine and it should be ready to answer requests. \n\nDecide on your commercial certificate: Self Signed certificates were generated by default. A CSR is located at ${distEduroamPath}/certs/server.csr (server.pem for Ubuntu) to request a commercial one. Remember the RADIUS extensions needed though!\n\nFor further configuration details, please see the documentation on disk or the web \n\n Choose OK to return to main menu." 22 75
 		fi
 	else
 		if [ "${installer_interactive}" = "y" ]; then
@@ -406,7 +419,7 @@ createRestorePoint() {
 
 	# record our list of backups
 	echo "${rpLabel} ${rpFile}" >> ${backupList}
-	bkpCmd="(cd /;tar cfv ${rpFile} ./etc/krb5.conf ./etc/samba ./etc/raddb) >> ${statusFile} 2>&1"
+	bkpCmd="(cd /;tar cfv ${rpFile} ./etc/krb5.conf ./etc/samba .${distEduroamPath}) >> ${statusFile} 2>&1"
 	
 	eval ${bkpCmd}
 
@@ -420,6 +433,6 @@ invokeEduroamInstallProcess ()
 
 {
 
-eval ${redhatCmdEduroam} &> >(tee -a ${statusFile})
+eval ${distCmdEduroam} &> >(tee -a ${statusFile})
 
 }

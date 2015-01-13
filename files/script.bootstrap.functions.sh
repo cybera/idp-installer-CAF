@@ -144,7 +144,7 @@ guessLinuxDist() {
 	then
 		dist="redhat"
 	else
-		really=$(askYesNo "Distribution" "Can not guess linux distribution, procede assuming ubuntu(ish)?")
+		really=$(askYesNo "Distribution" "Can not guess linux distribution, procede assuming debian(ish)?")
 
 		if [ "${really}" != "n" ]
 		then
@@ -155,6 +155,64 @@ guessLinuxDist() {
 	fi
 }
 
+setDistCommands() {
+        if [ ${dist} = "ubuntu" ]; then
+		debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
+                distCmdU=${ubuntuCmdU}
+                distCmdUa=${ubuntuCmdUa}
+                distCmd1=${ubuntuCmd1}
+                distCmd2=${ubuntuCmd2}
+                distCmd3=${ubuntuCmd3}
+                distCmd4=${ubuntuCmd4}
+                distCmd5=${ubuntuCmd5}
+                tomcatSettingsFile=${tomcatSettingsFileU}
+                dist_install_nc=${ubutnu_install_nc}
+                dist_install_ldaptools=${ubuntu_install_ldaptools}
+                distCmdEduroam=${ubuntuCmdEduroam}
+		distEduroamPath=${ubuntuEduroamPath}
+		distRadiusGroup=${ubuntuRadiusGroup}
+        elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
+                if [ ${dist} = "centos" ]; then
+			redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
+                        #redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
+                        distCmdU=${centosCmdU}
+                        distCmdUa=${centosCmdUa}
+                        distCmd1=${centosCmd1}
+                        distCmd2=${centosCmd2}
+                        distCmd3=${centosCmd3}
+                        distCmd4=${centosCmd4}
+                        distCmd5=${centosCmd5}
+                        dist_install_nc=${centos_install_nc}
+                        dist_install_ldaptools=${centos_install_ldaptools}
+                        distCmdEduroam=${centosCmdEduroam}
+			distEduroamPath=${centosEduroamPath}
+			distRadiusGroup=${centosRadiusGroup}
+                else
+                        redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
+                        distCmdU=${redhatCmdU}
+                        distCmd1=${redhatCmd1}
+                        distCmd2=${redhatCmd2}
+                        distCmd3=${redhatCmd3}
+                        distCmd4=${redhatCmd4}
+                        distCmd5=${redhatCmd5}
+                        dist_install_nc=${redhat_install_nc}
+                        dist_install_ldaptools=${redhat_install_ldaptools}
+                        distCmdEduroam=${redhatCmdEduroam}
+			distEduroamPath=${redhatEduroamPath}
+			distRadiusGroup=${redhatRadiusGroup}
+                fi
+                tomcatSettingsFile=${tomcatSettingsFileC}
+
+                if [ "$redhatDist" -eq "6" ]; then
+                        redhatEpel=${redhatEpel6}
+                else
+                        redhatEpel=${redhatEpel5}
+                fi
+
+        fi
+}
+
+
 validateConnectivity()
 
 {
@@ -162,8 +220,8 @@ if [ "$1" == "test" ]; then return 0; fi
 ##############################
 # variables definition
 ##############################
-distr_install_nc='yum install -y nc'
-distr_install_ldaptools='yum install -y openldap-clients'
+#distr_install_nc='yum install -y nc'
+#distr_install_ldaptools='yum install -y openldap-clients'
 
 ##############################
 # functions definition
@@ -184,8 +242,8 @@ function el () {
 ##############################
 elo "${Echo} ---------------------------------------------"
 elo "${Echo} Installing additional software..."
-elo "$distr_install_nc"
-elo "$distr_install_ldaptools"
+elo "$dist_install_nc"
+elo "$dist_install_ldaptools"
 elo "${Echo} Validating ${ldapserver} reachability..."
 
 ##############################

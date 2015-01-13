@@ -50,6 +50,7 @@ installDependanciesForInstallation ()
 	${Echo} "Updating repositories and installing generic dependencies"
 	#${Echo} "Live logging can be seen by this command in another window: tail -f ${statusFile}"
 	eval ${distCmdU} &> >(tee -a ${statusFile}) 
+	eval ${distCmdUa} &> >(tee -a ${statusFile})
 	eval ${distCmd1} &> >(tee -a ${statusFile})
 	${Echo} "Done."
 }
@@ -732,58 +733,67 @@ askForConfigurationData() {
 	httpspass=$(askString "HTTPS Keystore password" "The webserver uses a separate keystore for itself. Please input your Keystore password for the end user facing HTTPS.\n\nAn empty string generates a randomized new password" "" 1)
 }
 
-setDistCommands() {
-        if [ ${dist} = "ubuntu" ]; then
-                debianDist=`cat /etc/issue.net | awk -F' ' '{print $2}'  | cut -d. -f1`
-                distCmdU=${ubuntuCmdU}
-                distCmd1=${ubuntuCmd1}
-                distCmd2=${ubuntuCmd2}
-                distCmd3=${ubuntuCmd3}
-                distCmd4=${ubuntuCmd4}
-                distCmd5=${ubuntuCmd5}
-        elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
-                if [ ${dist} = "centos" ]; then
-                        redhatDist=`rpm -q centos-release | awk -F'-' '{print $3}'`
-                        distCmdU=${centosCmdU}
-                        distCmd1=${centosCmd1}
-                        distCmd2=${centosCmd2}
-                        distCmd3=${centosCmd3}
-                        distCmd4=${centosCmd4}
-                        distCmd5=${centosCmd5}
-                else
-                        redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
-                        distCmdU=${redhatCmdU}
-                        distCmd1=${redhatCmd1}
-                        distCmd2=${redhatCmd2}
-                        distCmd3=${redhatCmd3}
-                        distCmd4=${redhatCmd4}
-                        distCmd5=${redhatCmd5}
-                fi
-
-                if [ "$redhatDist" -eq "6" ]; then
-                        redhatEpel=${redhatEpel6}
-                else
-                        redhatEpel=${redhatEpel5}
-                fi
-
-                #if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
-                #
-                #       # Consider this base requirement for system, or maybe move it to the installation phase for Shibboleth??
-                #       #
-                ##      continueF="y"
+#setDistCommands() {
+#	if [ ${dist} = "ubuntu" ]; then
+#		distCmdU=${ubuntuCmdU}
+#		distCmdUa=${ubuntuCmdUa}
+#		distCmd1=${ubuntuCmd1}
+#		distCmd2=${ubuntuCmd2}
+#		distCmd3=${ubuntuCmd3}
+#		distCmd4=${ubuntuCmd4}
+#		distCmd5=${ubuntuCmd5}
+#		tomcatSettingsFile=${tomcatSettingsFileU}
+#		dist_install_nc=${ubutnu_install_nc}
+#		dist_install_ldaptools=${ubuntu_install_ldaptools}
+#		distCmdEduroam=${ubuntuCmdEduroam}
+#	elif [ ${dist} = "centos" -o "${dist}" = "redhat" ]; then
+#		if [ ${dist} = "centos" ]; then
+#			redhatDist=`cat /etc/centos-release |cut -f3 -d' ' |cut -c1`
+#			distCmdU=${centosCmdU}
+#			distCmdUa=${centosCmdUa}
+#			distCmd1=${centosCmd1}
+#			distCmd2=${centosCmd2}
+#			distCmd3=${centosCmd3}
+#			distCmd4=${centosCmd4}
+#			distCmd5=${centosCmd5}
+#			dist_install_nc=${centos_install_nc}
+#                	dist_install_ldaptools=${centos_install_ldaptools}
+#			distCmdEduroam=${centosCmdEduroam}
+#		else
+#			redhatDist=`cat /etc/redhat-release | cut -d' ' -f7 | cut -c1`
+#			distCmdU=${redhatCmdU}
+#			distCmd1=${redhatCmd1}
+#			distCmd2=${redhatCmd2}
+#			distCmd3=${redhatCmd3}
+#			distCmd4=${redhatCmd4}
+#			distCmd5=${redhatCmd5}
+#			dist_install_nc=${redhat_install_nc}
+#                        dist_install_ldaptools=${redhat_install_ldaptools}
+#			distCmdEduroam=${redhatCmdEduroam}
+#		fi
+#		tomcatSettingsFile=${tomcatSettingsFileC}
 #
+#		if [ "$redhatDist" -eq "6" ]; then
+#			redhatEpel=${redhatEpel6}
+#		else
+#			redhatEpel=${redhatEpel5}
+#		fi
 #
-#                       if [ "${continueF}" = "y" ]; then
-#                               installEPEL
-#                       fi
-#               fi
-
-                if [ "`which host 2>/dev/null`" == "" ]; then
-                        ${Echo} "Installing bind-utils..."
-                        yum -y -q install bind-utils >> ${statusFile} 2>&1
-                fi
-        fi
-}
+#		#if [ ! -z "`rpm -q epel-release | grep ' is not installed'`" ]; then
+#		#	
+#		#	# Consider this base requirement for system, or maybe move it to the installation phase for Shibboleth??
+#		#	#
+#		##	continueF="y"
+#     #			if [ "${continueF}" = "y" ]; then
+#     #				installEPEL
+#     #			fi
+#     #		fi
+#     #		if [ "`which host 2>/dev/null`" == "" ]; then
+#     #			${Echo} "Installing bind-utils..."
+#     #			yum -y -q install bind-utils >> ${statusFile} 2>&1
+#     #		fi
+#	fi
+#}
 
 
 prepConfirmBox() {
