@@ -254,8 +254,6 @@ ${Echo} "Previous installation found, performing upgrade."
                 fi
                 cp /opt/ndn-shib-fticks/target/*.jar /opt/shibboleth-identityprovider/lib
         else
-                fticks=$(askYesNo "Send anonymous data" "Do you want to send anonymous usage data to ${my_ctl_federation}?\nThis is recommended")
-
                 if [ "${fticks}" != "n" ]; then
                         installFticksIfEnabled
                 fi
