@@ -580,6 +580,7 @@ output += "ldapbinddn=\'"+ $("#ldapbinddn").val()+ "\'\n";
 output += "ldappass=\'"+ $("#ldappass").val()+ "\'\n";
 output += "ldapbasedn=\'"+ $("#ldapbasedn").val()+ "\'\n";
 output += "subsearch=\'"+ $("#subsearch").val()+ "\'\n";
+output += "passw_input='"+ $("#passw_input").val()+ "\'\n";
 output += "fticks=\'"+ $("#fticks").val()+ "\'\n";
 output += "eptid=\'"+ $("#eptid").val()+ "\'\n";
 output += "casurl=\'"+ $("#casurl").val()+ "\'\n";
