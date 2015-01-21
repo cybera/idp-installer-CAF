@@ -146,7 +146,8 @@ setJavaHome () {
         ln -s /usr/java/latest /usr/java/default
         export JAVA_HOME="/usr/java/default"
         #Set the alternatives
-        for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
+        #for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
+        for i in `ls $JAVA_HOME/bin/`;do update-alternatives --set $i $JAVA_HOME/bin/$i; done
 
         echo "***javahome is: ${JAVA_HOME}"
         # validate java_home and ensure it runs as expected before going any further
