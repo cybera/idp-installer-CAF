@@ -189,6 +189,7 @@ setJavaCACerts ()
 
 {
 	javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
+	keytool="${JAVA_HOME}/bin/keytool"
 }
 
 generatePasswordsForSubsystems ()
@@ -600,11 +601,11 @@ ${Echo} "Fetching TCS CA chain from web"
 	done
 	ccnt=1
 	while [ ${ccnt} -lt ${cnt} ]; do
-		md5finger=`keytool -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${certpath}${ccnt}.root | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
 		ccnt=`expr ${ccnt} + 1`
@@ -960,11 +961,11 @@ configShibbolethSSLForLDAPJavaKeystore()
 	for i in `ls ${certpath}${ldapCert}.*`; do
 
 		numLDAPCertificateFiles=$[$numLDAPCertificateFiles +1]
-		md5finger=`keytool -printcert -file ${i} | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${i} | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${i} | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -alias "${subject}" -file ${i} -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -alias "${subject}" -file ${i} -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${i}"
 	done

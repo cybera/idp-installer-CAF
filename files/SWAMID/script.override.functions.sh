@@ -51,11 +51,11 @@ installCertificates () {
 	done
 	ccnt=1
 	while [ ${ccnt} -lt ${cnt} ]; do
-		md5finger=`keytool -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
-		test=`keytool -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
+		md5finger=`${keytool} -printcert -file ${certpath}${ccnt}.root | grep MD5 | cut -d: -f2- | sed -re 's/\s+//g'`
+		test=`${keytool} -list -keystore ${javaCAcerts} -storepass changeit | grep ${md5finger}`
 		subject=`openssl x509 -subject -noout -in ${certpath}${ccnt}.root | awk -F= '{print $NF}'`
 		if [ -z "${test}" ]; then
-			keytool -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
+			${keytool} -import -noprompt -trustcacerts -alias "${subject}" -file ${certpath}${ccnt}.root -keystore ${javaCAcerts} -storepass changeit >> ${statusFile} 2>&1
 		fi
 		files="`${Echo} ${files}` ${certpath}${ccnt}.root"
 		ccnt=`expr ${ccnt} + 1`
