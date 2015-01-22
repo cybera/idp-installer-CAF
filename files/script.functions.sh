@@ -144,7 +144,6 @@ setJavaHome () {
         tar xzf ${downloadPath}/${javaSrc} -C /usr/java/
         ln -s /usr/java/jre${javaVer}/ /usr/java/latest
         ln -s /usr/java/latest /usr/java/default
-        export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:"
         export JAVA_HOME="/usr/java/default"
         #Set the alternatives
         for i in `ls $JAVA_HOME/bin/`; do rm -f /var/lib/alternatives/$i;update-alternatives --install /usr/bin/$i $i $JAVA_HOME/bin/$i 100; done
@@ -924,7 +923,7 @@ runShibbolethInstaller ()
 	# 	run shibboleth installer
 	cd /opt/shibboleth-identityprovider
 	${Echo} "Running shiboleth installer"
-	sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
+	JAVA_HOME=/usr/java/default sh install.sh -Didp.home.input="/opt/shibboleth-idp" -Didp.hostname.input="${certCN}" -Didp.keystore.pass="${pass}" >> ${statusFile} 2>&1
 }
 
 configShibbolethSSLForLDAPJavaKeystore()
