@@ -186,13 +186,9 @@ setJavaHome () {
 
 
 setJavaCACerts ()
+
 {
-	# 	set path to ca cert file
-	if [ -f "/etc/ssl/certs/java/cacerts" ]; then
-		javaCAcerts="/etc/ssl/certs/java/cacerts"
-	else
-		javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
-	fi
+	javaCAcerts="${JAVA_HOME}/lib/security/cacerts"
 }
 
 generatePasswordsForSubsystems ()
